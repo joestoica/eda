@@ -1,0 +1,107 @@
+---
+title: "Homework 2"
+author: "Joe Stoica"
+date: "9/4/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(scales)
+```
+
+```{r data and global constants}
+cytof <- read_csv("cytof.csv")
+blue <- "#6093ca"
+```
+
+### 1. Convert the dataset from wide to long form as we did in class. 
+
+```{r}
+gathered_cytof <- cytof %>% 
+  gather(key = "marker", value = "value")
+```
+
+####Make a faceted plot showing the distributions of each of the markers and describe these distributions. 
+
+```{r}
+gathered_cytof %>% 
+  ggplot(aes(x = value)) + 
+  geom_histogram(fill = blue) + 
+  facet_wrap(.~marker, nrow = 7) + 
+  theme_fivethirtyeight() + 
+  theme(axis.title = element_text()) +
+  xlab("Value") + 
+  ylab("Density") + 
+  ggtitle("Densities of CyTOF Markers") + 
+  scale_x_continuous(breaks = seq(0, 10, 5)) + 
+  scale_y_continuous(breaks = seq(0, 2, 1))
+```
+
+
+These distributions show a few things:
+1. There are multiple markers exhibiting bimodality, with the higher peak usually
+appearing on the left side of the histogram.
+2. There are multiple histograms showing unimodal behavior, which may be suggestive
+of being normally distributed observations. 
+
+#### What features do you notice? Are there groups of markers that seem more similar to each other?
+
+The markers that begin with CD seem to be either bimodal with left peaks or unimodal.
+There is only one KIR marker (KIR2DL5) that is not bimodal. The NK marker class seems
+to have the highest number of unimodal distributions. Essentially, markers in the
+same class seem to usually have similar distributions to one another. 
+
+***
+
+### 2. Choose two of the markers and make a Q-Q plot comparing their distributions. 
+
+```{r}
+markers <- gathered_cytof %>% 
+  filter(marker %in% c("CD56", "CD69"))
+
+markers %>% 
+  ggplot(aes(sample = value)) +
+  stat_qq()
+```
+
+What is the relationship between the distributions? 
+
+Can you describe it as a simple shift, or is it something more complicated?
+
+Is it different for different parts of the distribution?
+
+
+
+
+
+*** 
+
+3.Compute some summary statistics of the markers, describing their center, spread, or any
+other relevant features you can think of. Plot these statistics and interpret what your results.
+How do you like these plots compared with the plots of the full distribution?
+
+
+```{r}
+cytof_summary <- gathered_cytof %>% 
+  group_by(marker) %>% 
+  summarise(med = median(value),
+            mean = mean(value),
+            sd = sd(value)) %>% 
+  as.tibble()
+
+
+cytof_summary %>% arrange(med)
+
+
+cytof %>% 
+  ggplot(aes(factor(marker), value)) + 
+  geom_boxplot()
+  
+```
+
+
+
+*** 
