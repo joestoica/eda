@@ -1,12 +1,12 @@
 ---
 title: "Homework 2"
-author: "Joe Stoica"
+author: "Joe Stoica, Conor Devins"
 date: "9/4/2018"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE, message = FALSE)
 library(tidyverse)
 library(ggthemes)
 library(scales)
@@ -19,7 +19,7 @@ blue <- "#6093ca"
 
 ### 1. Convert the dataset from wide to long form as we did in class. 
 
-```{r}
+```{r, echo=TRUE}
 gathered_cytof <- cytof %>% 
   gather(key = "marker", value = "value")
 ```
@@ -41,9 +41,9 @@ gathered_cytof %>%
 ```
 
 
-These distributions show a few things:
+These distributions show a few things:  
 1. There are multiple markers exhibiting bimodality, with the higher peak usually
-appearing on the left side of the histogram.
+appearing on the left side of the histogram.  
 2. There are multiple histograms showing unimodal behavior, which may be suggestive
 of being normally distributed observations. 
 
@@ -59,19 +59,26 @@ same class seem to usually have similar distributions to one another.
 ### 2. Choose two of the markers and make a Q-Q plot comparing their distributions. 
 
 ```{r}
-markers <- gathered_cytof %>% 
-  filter(marker %in% c("CD56", "CD69"))
+markers1 <- gathered_cytof %>% 
+  filter(marker == "CD56")
+markers1 <- markers1$value
 
-markers %>% 
-  ggplot(aes(sample = value)) +
-  stat_qq()
+markers2 <- gathered_cytof %>%
+  filter(marker == "CD69")
+markers2 <- markers2$value
+qq.out <- qqplot(x=markers1, y=markers2, plot.it=FALSE) %>% 
+  as.data.frame()
+
+qq.out %>% 
+  ggplot(aes(x=x, y=y)) +
+  geom_point() + 
+  labs(x="CD56", y="CD69", title="QQ Plot of CD56 vs. CD69") +
+  geom_abline(slope=1, intercept=-1)
 ```
 
-What is the relationship between the distributions? 
+####What is the relationship between the distributions? Can you describe it as a simple shift, or is it something more complicated? Is it different for different parts of the distribution?
 
-Can you describe it as a simple shift, or is it something more complicated?
-
-Is it different for different parts of the distribution?
+The qqplot shows that the quantiles of the CD69 distribution are approximately the same as the quantiles of the CD56 distribution but shifted up by 1 (The line in the plot has an intercept of -1, not 0). This similarity holds for values of CD56 above 5 but then starts to deviate for lower values, as the CD69 distribution has a much heavier left tail than that of the CD56.
 
 
 
@@ -79,27 +86,27 @@ Is it different for different parts of the distribution?
 
 *** 
 
-3.Compute some summary statistics of the markers, describing their center, spread, or any
-other relevant features you can think of. Plot these statistics and interpret what your results.
-How do you like these plots compared with the plots of the full distribution?
+<!-- 3.Compute some summary statistics of the markers, describing their center, spread, or any -->
+<!-- other relevant features you can think of. Plot these statistics and interpret what your results. -->
+<!-- How do you like these plots compared with the plots of the full distribution? -->
 
 
 ```{r}
-cytof_summary <- gathered_cytof %>% 
-  group_by(marker) %>% 
-  summarise(med = median(value),
-            mean = mean(value),
-            sd = sd(value)) %>% 
-  as.tibble()
+# cytof_summary <- gathered_cytof %>% 
+#   group_by(marker) %>% 
+#   summarise(med = median(value),
+#             mean = mean(value),
+#             sd = sd(value)) %>% 
+#   as.tibble()
+# 
+# 
+# cytof_summary %>% arrange(med)
+# 
+# 
+# cytof %>% 
+#  ggplot(aes(factor(marker), value)) + 
+#  geom_boxplot()
 
-
-cytof_summary %>% arrange(med)
-
-
-cytof %>% 
-  ggplot(aes(factor(marker), value)) + 
-  geom_boxplot()
-  
 ```
 
 
