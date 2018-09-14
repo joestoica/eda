@@ -1,0 +1,57 @@
+---
+title: "EDA Homework 3"
+author: "Joe Stoica"
+date: "9/12/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lattice)
+library(ggthemes)
+```
+
+We’ll try transfomations and modeling of the food web data, described in Cleveland starting on page 58.
+
+It is available in the lattice.RData file, which you can download from http://ml.stat.purdue.edu/stat695t/R/lattice.RData.
+
+The data set is called food.web, and it contains two variables
+  – mean.length, a positive, continuous variable giving the average length of the food web, and
+  – dimension, a categorical variable taking values Mixed, Two, and Three, giving the type of food web.
+We will be interested in how mean.length varies with dimension.
+
+
+####1. Make a Q-normal plot of mean.length, faceted out by dimension. 
+
+```{r}
+head(food.web)
+
+food.web %>% 
+  ggplot(aes(sample = mean.length)) + 
+  stat_qq() +
+  facet_grid(. ~ dimension, space = "free_y") + 
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text()) +
+  xlab("Theoretical") +
+  ylab("Sample") +
+  ggtitle("Q-Normal Plots for the Food Web by Dimension") + 
+  NULL
+```
+
+Are the data well described by a normal distribution?
+
+#### 2. Let’s try some transformations of mean.length. Make Q-normal plots of log-transformed mean.length and power-transformed mean.length, with power −1 (so the inverse transfor- mation), faceted out by dimension.
+
+```{r}
+lm(data = food.web, mean.length^-1 ~ factor(dimension))
+```
+
+Do either of these transformations make mean.length look more normally distributed?
+
+#### 3. Let’s model the inverse of mean.length as a function of dimension. Create a linear model with the inverse of mean.length as the response (y variable) and dimension as the predictor (x variable).
+
+Describe the dependence of the inverse of mean.length on dimension. 
+
+Make a Q-normal plot of the pooled residuals to check for normality.
+
