@@ -8,32 +8,32 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 library(tidyverse)
+library(broom)
 ```
 
 ```{r}
 df <- read_csv("data.csv")
-head(df)
 ```
-
 
 Using loess or otherwise, fit a model to predict log10 (budget) from year and length.  For
 simplicity, do not transform year and length (even though a transformation of length would
 probably be sensible.) You will have to make a number of modeling choices:
 
+
+#### Should you fit a linear or curved function for year and/or length?
+
 ```{r}
-m1 <- lm(log(budget) ~ year + length, data = df)
-m2 <- summary(lm(log(budget) ~ year + length + year*length, data = df))
-
-df1 <- data.frame(m1_resid = m1$residuals, m2_resid = m2$residuals)
-
-ggplot(df1, aes(sample = m1_resid)) +
-  stat_qq() +
-  stat_qq_line()
-
-ggplot(df1, aes(sample = m2_resid)) +
-  stat_qq() +
-  stat_qq_line()
+pairs(log(df$budget) ~ df$year + df$length)
 ```
+#TODO DOUBLE CHECK THIS IS HOW YOU DO THIS HAHA
+
+We will fit a curved function for length due to it appearing to have a slightly 
+curved shape that appears to violate linear assumptions. A linear fit seems more 
+appropriate for year, however, because it doesn't appear to be curved.  
+
+***
+
+#### Do you need an interaction between year and length?
 
 ```{r}
 make_coplot_df = function(data_frame, faceting_variable, number_bins = 6) {
@@ -59,9 +59,10 @@ make_coplot_df = function(data_frame, faceting_variable, number_bins = 6) {
   return(df_expanded)
 }
 
-df_expanded = make_coplot_df(df, "year", 10)
+df_cond_on_year = make_coplot_df(df, "year", 10)
+df_cond_on_length = make_coplot_df(df, "length", 10)
 
-ggplot(df_expanded, aes(y = budget, x = length)) +
+ggplot(df_cond_on_year, aes(y = budget, x = length)) +
   geom_point() +
   facet_wrap(~ interval, ncol = 5) +
   geom_smooth(method = "loess", se = FALSE, span = 1, method.args = list(degree = 1)) +
@@ -69,25 +70,127 @@ ggplot(df_expanded, aes(y = budget, x = length)) +
   scale_x_continuous(breaks = seq(0,400,200))
 ```
 
-This coplot shows that their is a clear interaction between year and budget because there are very distinct differences as time passes, so we will include it in the model. 
+The coplot shows that there is a clear interaction between year and budget because there are very distinct differences as time passes, so we will include it in the model. 
 
-–
-Should you fit a linear or curved function for year?
-–
-Should you fit a linear or curved function for length?
-–
-Do you need an interaction between year and length?
-–
-What span should you use in your loess smoother?
-–
-Should you fit using least squares or a robust fit?
-Some of these choices are clear-cut, while others will be a matter of preference. Either way,
-you must justify all your choices.
+***
+
+#### What span should you use in your loess smoother?
+
+```{r fitted vs resid}
+ggplot(m1_df, aes(x = .fitted, y = .resid)) +
+  geom_point() + 
+  stat_smooth(method = "loess", method.args = list(degree = 1, family = "symmetric"), se = TRUE) + 
+  geom_hline(yintercept = 0, col = "red")
+```
+
+```{r, include=FALSE}
+ggplot(m2_df, aes(x = .fitted, y = .resid)) +
+  geom_point() + 
+  stat_smooth(method = "loess", method.args = list(degree = 1, family = "symmetric"), se = TRUE) + 
+  geom_hline(yintercept = 0, col = "red")
+
+ggplot(m3_df, aes(x = .fitted, y = .resid)) +
+  geom_point() + 
+  stat_smooth(method = "loess", method.args = list(degree = 1, family = "symmetric"), se = TRUE) + 
+  geom_hline(yintercept = 0, col = "red")
+```
+
+We chose a span of 0.1, because the residuals seem to be centered around 0 the most here. 
+If we were to do this more formally, we would use cross validation to find a span
+that minimizes mean square error.  
+
+***
+
+#### Should you fit using least squares or a robust fit?
+#TODO EXPLAIN MORE, GRAPH?
+We chose to use a robust fit since it is less prone to the outliers that are present
+in this dataset. 
+
+***
+
+```{r, include=FALSE}
+# Span 
+m1 <- loess(log(budget) ~ year + length + year*length, data = df,
+            drop.square = "year",
+            family = "symmetric",
+            degree = 2, 
+            span = 0.1)
+
+m1_df = augment(m1)
+
+m2 <- loess(log(budget) ~ year + length + year*length, data = df,
+            drop.square = "year",
+            family = "symmetric",
+            degree = 2, 
+            span = 0.25)
+
+m2_df = augment(m2)
+
+m3 <- loess(log(budget) ~ year + length + year*length, data = df,
+            drop.square = "year",
+            family = "symmetric",
+            degree = 2, 
+            span = 0.5)
+
+m3_df = augment(m3)
+```
+
+
+```{r}
+# year residuals
+ggplot(m1_df, aes(x = year, y = .resid)) +
+  geom_point(alpha = 0.2) +
+  stat_smooth(method = "loess", 
+              method.args = list(degree = 1, family = "symmetric"))+
+  geom_hline(yintercept = 0, col = "red")
+
+# length residuals
+ggplot(m1_df, aes(x = length, y = .resid)) +
+  geom_point(alpha = 0.2) +
+  stat_smooth(method = "loess", 
+              method.args = list(degree = 1, family = "symmetric"))+
+  geom_hline(yintercept = 0, col = "red")
+
+# coplot condition on year
+m1_df_cond_on_year = make_coplot_df(m1_df, "year", 10)
+
+ggplot(m1_df_cond_on_year, aes(y = .resid, x = length)) +
+  geom_point() +
+  facet_wrap(~ interval, ncol = 5) +
+  geom_smooth(method = "loess", se = FALSE, span = 1, method.args = list(degree = 1, family = "symmetric")) +
+  ggtitle("Coplot of Budget ~ Length given Year") + 
+  scale_x_continuous(breaks = seq(0,400,200))
+
+# coplot condition on length
+m1_df_cond_on_length = make_coplot_df(m1_df, "length", 10)
+
+ggplot(m1_df_cond_on_length, aes(y = .resid, x = year)) +
+  geom_point() +
+  facet_wrap(~ interval, ncol = 5) +
+  geom_smooth(method = "loess", se = FALSE, span = 1, method.args = list(degree = 1, family = "symmetric")) +
+  ggtitle("Coplot of Budget ~ Length given Year") + 
+  scale_x_continuous(breaks = seq(0,400,200))
+
+# fitted vs residuals 
+ggplot(m1_df, aes(x = .fitted, y = .resid)) +
+  geom_point() + 
+  stat_smooth(method = "loess", method.args = list(degree = 1, family = "symmetric"), se = TRUE) + 
+  geom_hline(yintercept = 0, col = "red")
+
+## qqplot of residuals
+m1_df %>% 
+  ggplot(aes(sample = .resid)) + 
+  stat_qq() + 
+  stat_qq_line()
+```
+
+
 –
 Draw  one  set  of  faceted  plots  to  display  the  fit  –  either  condition  on  year  or  length,
 whichever seems to you to be more interesting. Choose a sensible number of panels. Briefly
 describe what this set of plots shows you.
 –
+# TODO
 Draw a raster-and-contour plot (or other "3D" plot of your choice) to further display your
 fit.  Briefly describe what, if anything, this plot shows you that your plot for question 2 didn’t.
 
@@ -104,4 +207,4 @@ A justification of your modeling choices.
 Two graphs and brief comments on those two graphs.  (You should draw many more
 than two graphs when deciding what model to fit, but only include two graphs in
 your submission.)
-1
+
