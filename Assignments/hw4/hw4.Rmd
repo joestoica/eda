@@ -1,0 +1,107 @@
+---
+title: "EDA Homwork 4"
+author: "Joe Stoica, Conor Devins"
+date: "10/10/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(tidyverse)
+```
+
+```{r}
+df <- read_csv("data.csv")
+head(df)
+```
+
+
+Using loess or otherwise, fit a model to predict log10 (budget) from year and length.  For
+simplicity, do not transform year and length (even though a transformation of length would
+probably be sensible.) You will have to make a number of modeling choices:
+
+```{r}
+m1 <- lm(log(budget) ~ year + length, data = df)
+m2 <- summary(lm(log(budget) ~ year + length + year*length, data = df))
+
+df1 <- data.frame(m1_resid = m1$residuals, m2_resid = m2$residuals)
+
+ggplot(df1, aes(sample = m1_resid)) +
+  stat_qq() +
+  stat_qq_line()
+
+ggplot(df1, aes(sample = m2_resid)) +
+  stat_qq() +
+  stat_qq_line()
+```
+
+```{r}
+make_coplot_df = function(data_frame, faceting_variable, number_bins = 6) {
+  ## co.intervals gets the limits used for the conditioning intervals
+  intervals = co.intervals(data_frame[[faceting_variable]], number = number_bins)
+  ## indices is a list, with the ith element containing the indices of the
+  ## observations falling into the ith interval
+  indices = apply(intervals, 1, function(x)
+    which(data_frame[[faceting_variable]] <= x[2] & data_frame[[faceting_variable]] >= x[1]))
+  ## interval_descriptions is formatted like indices, but has interval
+  ## names instead of indices of the samples falling in the index
+  interval_descriptions = apply(intervals, 1, function(x) {
+    num_in_interval = sum(data_frame[[faceting_variable]] <= x[2] & data_frame[[faceting_variable]] >= x[1])
+    interval_description = sprintf("(%.2f, %.2f)", x[1], x[2])
+    return(rep(interval_description, num_in_interval))
+  })
+  ## df_expanded has all the points we need for each interval, and the
+  ## 'interval' column tells us which part of the coplot the point should
+  ## be plotted in
+  df_expanded = data_frame[unlist(indices),]
+  df_expanded$interval = factor(unlist(interval_descriptions),
+                                levels = unique(unlist(interval_descriptions)), ordered = TRUE)
+  return(df_expanded)
+}
+
+df_expanded = make_coplot_df(df, "year", 10)
+
+ggplot(df_expanded, aes(y = budget, x = length)) +
+  geom_point() +
+  facet_wrap(~ interval, ncol = 5) +
+  geom_smooth(method = "loess", se = FALSE, span = 1, method.args = list(degree = 1)) +
+  ggtitle("Coplot of Budget ~ Length given Year") + 
+  scale_x_continuous(breaks = seq(0,400,200))
+```
+
+This coplot shows that their is a clear interaction between year and budget because there are very distinct differences as time passes, so we will include it in the model. 
+
+–
+Should you fit a linear or curved function for year?
+–
+Should you fit a linear or curved function for length?
+–
+Do you need an interaction between year and length?
+–
+What span should you use in your loess smoother?
+–
+Should you fit using least squares or a robust fit?
+Some of these choices are clear-cut, while others will be a matter of preference. Either way,
+you must justify all your choices.
+–
+Draw  one  set  of  faceted  plots  to  display  the  fit  –  either  condition  on  year  or  length,
+whichever seems to you to be more interesting. Choose a sensible number of panels. Briefly
+describe what this set of plots shows you.
+–
+Draw a raster-and-contour plot (or other "3D" plot of your choice) to further display your
+fit.  Briefly describe what, if anything, this plot shows you that your plot for question 2 didn’t.
+
+What to submit:
+–
+An R code file to reproduce your fit and plots.
+–
+A write-up containing:
+–
+The line of R code you used to produce your loess model.
+–
+A justification of your modeling choices.
+–
+Two graphs and brief comments on those two graphs.  (You should draw many more
+than two graphs when deciding what model to fit, but only include two graphs in
+your submission.)
+1
