@@ -88,22 +88,34 @@ biplot2014 <- ggbiplot(prcomp2014, scale = 0, var.axes = FALSE, group = new_memb
 
 ```{r}
 biplot1989
+```
+
+Here we can see two distinct clusters of Democrats and Republicans. Both groups 
+appear to have similar variance in their "long" direction, while the Democrats
+have a little more spread in the middle than the Republicans. There appears to be 
+a clear diviison in the middle, however some Senators do come relatively to each other.
+
+```{r}
 biplot2014
 ```
+
+This is the PCA biplot for the 2014 U.S. Senate votes. This is very different from
+1989's biplot. The Democrats are very tightly clustered, suggesting that they 
+all have similar voting patterns. There is one outlier though, and it seems that 
+the Independent partys vote like Democrats do. The Republicans, however, are very 
+spread out and although they form a distinct cluster, their voting behavior varies 
+may more than then Democrats.
+
+
+It is apparent that there is a definite increase in polarization between 1989 and 2014 
+due to the fact the two clusters are much further apart.
 
 
 ***
 
-Polarization over time
-Next, we want to look at this more systematically over time.  Repeat
-the same analysis you used in the first part for every year in our dataset.   Construct a
-measure  describing  polarization,  and  plot  it  over  time  (think  about  variance  explained,
-average distance between the scores for Democrats and Republicans, or similar measures).
-If you are able to make a clean visualization showing the PCAs or MDSs for each session
-of congress and you think it helps to support your claims, include that as well.
-Do you think that polarization has increased over time?  Is something more complicated
-happening?  Back up your claim with specific aspects of your analyses and graphs, and
-describe why they support your claim.
+## Polarization over time
+### Next, we want to look at this more systematically over time.  Repeat the same analysis you used in the first part for every year in our dataset.   Construct a measure  describing  polarization,  and  plot  it  over  time  (think  about  variance  explained, average distance between the scores for Democrats and Republicans, or similar measures). If you are able to make a clean visualization showing the PCAs or MDSs for each session of congress and you think it helps to support your claims, include that as well. Do you think that polarization has increased over time?  Is something more complicated happening?  Back up your claim with specific aspects of your analyses and graphs, and describe why they support your claim.
+
 
 
 Ideological position of one senator
