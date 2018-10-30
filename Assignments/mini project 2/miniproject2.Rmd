@@ -11,97 +11,85 @@ library(tidyverse)
 library(ggbiplot)
 ```
 
-```{r data cleaning members}
-# members <- read_csv("congress/1989/members.csv")
-# members1 <- read_csv("congress/1990/members.csv")
-# members2 <- read_csv("congress/1991/members.csv")
-# members3 <- read_csv("congress/1992/members.csv")
-# members4 <- read_csv("congress/1993/members.csv")
-# members5 <- read_csv("congress/1994/members.csv")
-# members6 <- read_csv("congress/1995/members.csv")
-# members7 <- read_csv("congress/1996/members.csv")
-# members8 <- read_csv("congress/1997/members.csv")
-# members9 <- read_csv("congress/1998/members.csv")
-# members10 <- read_csv("congress/1999/members.csv")
-# members11 <- read_csv("congress/2000/members.csv")
-# members12 <- read_csv("congress/2001/members.csv")
-# members13 <- read_csv("congress/2002/members.csv")
-# members14 <- read_csv("congress/2003/members.csv")
-# members15 <- read_csv("congress/2004/members.csv")
-# members16 <- read_csv("congress/2005/members.csv")
-# members17 <- read_csv("congress/2006/members.csv")
-# members18 <- read_csv("congress/2007/members.csv")
-# members19 <- read_csv("congress/2008/members.csv")
-# members20 <- read_csv("congress/2009/members.csv")
-# members21 <- read_csv("congress/2010/members.csv")
-# members22 <- read_csv("congress/2011/members.csv")
-# members23 <- read_csv("congress/2012/members.csv")
-# members24 <- read_csv("congress/2013/members.csv")
-# members25 <- read_csv("congress/2014/members.csv")
-# 
-# dfs <- Filter(function(x) is(x, "data.frame"), mget(ls()))
-# members <- do.call(rbind, dfs)
-# 
-# saveRDS(file = "members.RData", members)
-# rm(list=ls())
-
-members <- read_rds("members.RData")
-votes2014 <- read_csv("congress/2014/votes.csv")
+```{r, message=FALES, warning=FALSE}
+members1989 <- read_csv("congress/1989/members.csv")
+votes1989 <- read_csv("congress/1989/votes.csv") 
+members2014 <- read_csv("congress/2014/members.csv")
+votes2014 <- read_csv("congress/2014/votes.csv") 
 ```
 
-
-
-
-Polarization in two years
-
+##Polarization in two years
 ### Take a look at the voting records for one of the earlier sessions in the dataset and one of the later sessions Using either PCA on the senators by bills matrix or multi-dimensional scaling on a measure of distance between senators that you construct, make a plot describing the relationships between the senators. Does it look like they fall on a one-dimensional liberal/conservative axis?  Are there outliers?  Are the patterns similar in the two years that you chose? What are the differences in the PCA/MDS plots in the two years that you chose?
 
 ```{r}
-# "Yea", "Not Voting", "Nay", "Not Guilty", "Guilty", "Present" 
-rewrite_votes <- function(x) {
-  ifelse(x == "Yea", 0, 
-         ifelse(x == "Nay", 1, 
-                ifelse(x == "Not Voting", 2, 
-                       ifelse(x == "Not Guilty", 3,
-                              ifelse(x == "Present", 4, 5)))))
+## this makes members and votes go in the same order
+joined_1989 = join(members1989, votes1989, by = "id")
+new_votes_1989 = joined_1989[,c(-1, -2, -3, -4, -5, -6)]
+new_members_1989 = joined_1989[,1:6]
+
+## Decide how to recode the variables
+## this function maps "Yea" to 1, "Nay" to -1, everything else to 0
+recode = function(x) {
+  if(is.na(x)) {
+    return(0)
+  } else if(x == "Yea") {
+    return(1)
+  } else if(x == "Nay") {
+    return(-1)
+  } else {
+    return(0)
+  }
 }
+
+votes_recoded_1989 = apply(new_votes_1989, 1:2, recode)
+
+prcomp1989 = prcomp(votes_recoded_1989, scale. = FALSE)
+
+biplot1989 <-  ggbiplot(prcomp1989, scale = 0, var.axes = FALSE, group = new_members_1989$party)  +
+  scale_color_manual(values = c("D" = "darkblue", "R" = "firebrick", "I" = "green")) + 
+  labs(title = "PCA on US Political Party Senate Votes in 1989",
+       x = "PC1",
+       y = "PC2")
 ```
+
+
 
 
 ```{r}
-# Read in data
-votes1989 <- read_csv("congress/1989/votes.csv") 
+## this makes members and votes go in the same order
+joined = join(members2014, votes2014, by = "id")
+new_votes_2014 = joined[,c(-1, -2, -3, -4, -5, -6)]
+new_members_2014 = joined[,1:6]
 
-# Change categorical votes to numerical
-applied1989 <- data.frame(id = votes1989$id, apply(votes1989[,-1], 1:2, rewrite_votes))
-applied1989 <- applied1989 %>% left_join(members %>% select(id, party), by = "id") %>% select(-id)
-applied1989 <- applied1989[, apply(applied1989[,-ncol(applied1989)], 2, var, na.rm = TRUE) > 0]
+## Decide how to recode the variables
+## this function maps "Yea" to 1, "Nay" to -1, everything else to 0
+recode = function(x) {
+  if(is.na(x)) {
+    return(0)
+  } else if(x == "Yea") {
+    return(1)
+  } else if(x == "Nay") {
+    return(-1)
+  } else {
+    return(0)
+  }
+}
 
-pca.1989 <- prcomp(applied1989[,-ncol(applied1989)])
-ggbiplot(pca.1989, var.axes = FALSE, groups = applied1989$party)
+votes_recoded_2014 = apply(new_votes_2014, 1:2, recode)
+
+prcomp2014 = prcomp(votes_recoded_2014, scale. = FALSE)
+
+biplot2014 <- ggbiplot(prcomp2014, scale = 0, var.axes = FALSE, group = new_members_2014$party)  +
+  scale_color_manual(values = c("D" = "darkblue", "R" = "firebrick", "I" = "Green")) +
+  labs(title = "PCA on US Political Party Senate Votes in 2014",
+       x = "PC1",
+       y = "PC2")
 ```
 
 ```{r}
-votes2014 <- read_csv("congress/2014/votes.csv") 
-
-rewrite_votes_2014 <- function(x) {
-  ifelse(x == "Yea", 0, 
-         ifelse(x == "Nay", 1, 
-                ifelse(x == "Not Voting", 2, 3)))
-}
-
-# Change categorical votes to numerical
-applied2014 <- data.frame(id = votes2014$id, apply(votes2014[,-1], 1:2, rewrite_votes_2014))
-
-applied2014 <- applied2014 %>% left_join(members %>% select(id, party), by = "id") %>% select(-id)
-
-applied2014 <- applied2014[apply(applied2014[-ncol(applied2014)], 2, var, na.rm = TRUE) > 0]
-
-pca.2014 <- prcomp(applied2014[,-ncol(applied2014)])
-
-ggbiplot(pca.2014, var.axes = FALSE, groups = applied2014$party)
+biplot1989
+biplot2014
 ```
-
 
 
 ***
