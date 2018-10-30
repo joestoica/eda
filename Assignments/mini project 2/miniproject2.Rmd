@@ -1,0 +1,170 @@
+---
+title: "Mini Project 2"
+author: "Joe Stoica, Conor Devins"
+date: "10/28/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(tidyverse)
+library(ggbiplot)
+```
+
+```{r data cleaning members}
+# members <- read_csv("congress/1989/members.csv")
+# members1 <- read_csv("congress/1990/members.csv")
+# members2 <- read_csv("congress/1991/members.csv")
+# members3 <- read_csv("congress/1992/members.csv")
+# members4 <- read_csv("congress/1993/members.csv")
+# members5 <- read_csv("congress/1994/members.csv")
+# members6 <- read_csv("congress/1995/members.csv")
+# members7 <- read_csv("congress/1996/members.csv")
+# members8 <- read_csv("congress/1997/members.csv")
+# members9 <- read_csv("congress/1998/members.csv")
+# members10 <- read_csv("congress/1999/members.csv")
+# members11 <- read_csv("congress/2000/members.csv")
+# members12 <- read_csv("congress/2001/members.csv")
+# members13 <- read_csv("congress/2002/members.csv")
+# members14 <- read_csv("congress/2003/members.csv")
+# members15 <- read_csv("congress/2004/members.csv")
+# members16 <- read_csv("congress/2005/members.csv")
+# members17 <- read_csv("congress/2006/members.csv")
+# members18 <- read_csv("congress/2007/members.csv")
+# members19 <- read_csv("congress/2008/members.csv")
+# members20 <- read_csv("congress/2009/members.csv")
+# members21 <- read_csv("congress/2010/members.csv")
+# members22 <- read_csv("congress/2011/members.csv")
+# members23 <- read_csv("congress/2012/members.csv")
+# members24 <- read_csv("congress/2013/members.csv")
+# members25 <- read_csv("congress/2014/members.csv")
+# 
+# dfs <- Filter(function(x) is(x, "data.frame"), mget(ls()))
+# members <- do.call(rbind, dfs)
+# 
+# saveRDS(file = "members.RData", members)
+# rm(list=ls())
+
+members <- read_rds("members.RData")
+votes2014 <- read_csv("congress/2014/votes.csv")
+```
+
+
+
+
+Polarization in two years
+
+### Take a look at the voting records for one of the earlier sessions in the dataset and one of the later sessions Using either PCA on the senators by bills matrix or multi-dimensional scaling on a measure of distance between senators that you construct, make a plot describing the relationships between the senators. Does it look like they fall on a one-dimensional liberal/conservative axis?  Are there outliers?  Are the patterns similar in the two years that you chose? What are the differences in the PCA/MDS plots in the two years that you chose?
+
+```{r}
+# "Yea", "Not Voting", "Nay", "Not Guilty", "Guilty", "Present" 
+rewrite_votes <- function(x) {
+  ifelse(x == "Yea", 0, 
+         ifelse(x == "Nay", 1, 
+                ifelse(x == "Not Voting", 2, 
+                       ifelse(x == "Not Guilty", 3,
+                              ifelse(x == "Present", 4, 5)))))
+}
+```
+
+
+```{r}
+# Read in data
+votes1989 <- read_csv("congress/1989/votes.csv") 
+
+# Change categorical votes to numerical
+applied1989 <- data.frame(id = votes1989$id, apply(votes1989[,-1], 1:2, rewrite_votes))
+applied1989 <- applied1989 %>% left_join(members %>% select(id, party), by = "id") %>% select(-id)
+applied1989 <- applied1989[, apply(applied1989[,-ncol(applied1989)], 2, var, na.rm = TRUE) > 0]
+
+pca.1989 <- prcomp(applied1989[,-ncol(applied1989)])
+ggbiplot(pca.1989, var.axes = FALSE, groups = applied1989$party)
+```
+
+```{r}
+votes2014 <- read_csv("congress/2014/votes.csv") 
+
+rewrite_votes_2014 <- function(x) {
+  ifelse(x == "Yea", 0, 
+         ifelse(x == "Nay", 1, 
+                ifelse(x == "Not Voting", 2, 3)))
+}
+
+# Change categorical votes to numerical
+applied2014 <- data.frame(id = votes2014$id, apply(votes2014[,-1], 1:2, rewrite_votes_2014))
+
+applied2014 <- applied2014 %>% left_join(members %>% select(id, party), by = "id") %>% select(-id)
+
+applied2014 <- applied2014[apply(applied2014[-ncol(applied2014)], 2, var, na.rm = TRUE) > 0]
+
+pca.2014 <- prcomp(applied2014[,-ncol(applied2014)])
+
+ggbiplot(pca.2014, var.axes = FALSE, groups = applied2014$party)
+```
+
+
+
+***
+
+Polarization over time
+Next, we want to look at this more systematically over time.  Repeat
+the same analysis you used in the first part for every year in our dataset.   Construct a
+measure  describing  polarization,  and  plot  it  over  time  (think  about  variance  explained,
+average distance between the scores for Democrats and Republicans, or similar measures).
+If you are able to make a clean visualization showing the PCAs or MDSs for each session
+of congress and you think it helps to support your claims, include that as well.
+Do you think that polarization has increased over time?  Is something more complicated
+happening?  Back up your claim with specific aspects of your analyses and graphs, and
+describe why they support your claim.
+
+
+Ideological position of one senator
+The analyses in the previous parts told us about the relative
+ideological positions of and the amount of separation between the parties, but not about
+absolute changes from year to year. We might want to know about absolute changes in the
+ideological positions of the parties so that we can assign blame to one or both parties for
+polarization, but it’s a tricky question to get at because both the senators voting on the bills
+and the bills being voted on change from year to year.
+One way of starting to answer the question is to take one senator who served each year and
+compare the parties to that senator.  If the senator’s politics stayed the same over time, we
+can measure the two parties’ positions relative to that senator.
+On the other hand, if you think that there hasn’t been an increase in polarization and that
+the ideological distributions of the parties has stayed basically the same over time, we can
+investigate whether individual senators have changed their politics over time in the same
+way, by measuring the position of a given senator relative to the positions of the two major
+parties.
+
+Choose one senator who served in all (or at least many) of the years we have represented in
+our dataset, and make a plot describing his or her position relative to the two major parties
+over time.  Describe the implications of your plot either in terms of which party is more
+to blame for polarization or relating to the question of whether that senator’s politics has
+changed over time. You should also describe the limitations of your analysis, and whether
+there are other possible explanations for the phenomena you see.
+
+Note:
+An example of a senator whose ideology we might expect to have been constant over
+time is Mitch McConnell (currently the majority leader and a senator from Kentucky).  A
+senator whose ideology we might suspect has changed over time is John McCain, the late
+senator from Arizona.
+Grading
+
+
+: Submit a report as a PDF, the body of which should be no more than ten pages, including
+graphs (if you don’t feel like you need ten pages, submit fewer). Additional technical graphs can
+be included in an appendix, which will not count toward the ten page limit and which we might
+not bother to read.  Submit your code as a separate file.  Also upload any additional sources
+required to reproduce your work.
+Point distribution:
+
+–
+10
+points for the first set of questions.
+–
+10
+points for the second set of questions.
+–
+10
+points for the third set of questions.
+–
+10
+points for presentation.
