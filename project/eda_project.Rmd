@@ -1,0 +1,87 @@
+---
+title: "EDA Project"
+author: "Joe Stoica, Conor Devins, Geno Kim"
+date: "11/19/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(tidyverse)
+library(lubridate)
+library(ggthemes)
+```
+
+```{r read in data}
+# From https://www.kaggle.com/sulmansarwar/transactions-from-a-bakery
+bakery <- read_csv("BreadBasket_DMS.csv")
+```
+
+```{r ggplot theme}
+# Set global ggplot theme
+theme_set(theme_fivethirtyeight() + theme(axis.title = element_text()))
+```
+
+
+```{r make datetime}
+bakery <- bakery %>%
+  # join the Date and Time columns into one
+  unite(col = datetime, Date, Time, sep = " ") %>% 
+  # convert to datetime data type
+  mutate(datetime = ymd_hms(datetime))
+```
+
+```{r}
+head(bakery)
+```
+
+
+Let's split times into meals
+
+```{r}
+bakery %>% 
+  ggplot(aes(hour(datetime))) +
+  geom_histogram(binwidth = 1, color = "black") +
+  xlab("Hour") +
+  ggtitle("Number of Items bought per hour") +
+  scale_x_continuous(breaks = seq(1, 24, 1)) + 
+  theme()
+NULL
+```
+
+```{r make meal col}
+bakery <- bakery %>% 
+  mutate(meal = case_when(
+    hour(datetime) %in% 7:10 ~ "breakfast",
+    hour(datetime) %in% 11:14 ~ "lunch",
+    hour(datetime) %in% 15:19 ~ "dinner",
+    TRUE ~ "other"
+  ))
+
+bakery$meal <- factor(bakery$meal, levels = c("breakfast", "lunch", "dinner", "other"))
+```
+
+```{r items per meal}
+bakery %>% 
+  ggplot(aes(meal)) +
+  geom_bar()+
+  xlab("Meal") +
+  ggtitle("Number of Items Bought per Meal")
+```
+
+Most purchases bought during lunch. Is other negligible?
+
+
+```{r}
+df_bought_items <- bakery %>% 
+  group_by(Transaction, datetime) %>% 
+  count(meal)
+
+# number of items bought per meal
+df_bought_items %>% 
+  group_by(meal) %>% 
+  summarise(mean(n))
+```
+
+I think we could do a biplot of items bought by hour or meal or something to show that
+only certain items are bought at certain times i.e. breakfast foods at breakfast?
