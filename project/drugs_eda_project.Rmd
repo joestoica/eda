@@ -156,7 +156,7 @@ SRI_list <- c("Celexa",
               "Desyrel",
               "Trazodone")
 
-AAP_list = c("Abilify", "Zyprexa")
+AAP_list = c("Abilify", "Zyprexa","seroquel")
 
 
 AMP_list <- c("Adderall",
@@ -189,6 +189,7 @@ MISC_list <- c("Lamictal",
                "Lithium-Carbonate",
                "Mirtazapine",
                "Gabapentine",
+               "neurontin",
                "prempro",
                "remeron",
                "Sular",
