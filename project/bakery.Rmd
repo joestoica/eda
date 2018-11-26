@@ -1,8 +1,8 @@
 ---
-title: "EDA Project"
+title: "Bakery"
 author: "Joe Stoica, Conor Devins, Geno Kim"
-date: "11/19/2018"
-output: pdf_document
+date: "11/26/2018"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
