@@ -195,7 +195,7 @@ MISC_list <- c("Lamictal",
                "Sular",
                "synthroid")
 
-type_list <- c(rep("AAP", 2), rep("AMP", 3), rep("BNZ", 4), rep("MISC", 9), rep("MOAI", 2),
+type_list <- c(rep("AAP", 3), rep("AMP", 3), rep("BNZ", 4), rep("MISC", 10), rep("MOAI", 2),
                rep("NRI", 6), rep("OPD", 2), rep("SRI", 10), rep("TCA", 3))
 drug_list <- c(AAP_list, AMP_list, BNZ_list, MISC_list, MOAI_list, NRI_list, OPD_list, SRI_list, TCA_list)
 
