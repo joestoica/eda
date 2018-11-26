@@ -239,7 +239,7 @@ df %>%
   scale_fill_viridis_d()
 ```
 
-The above plot shows that the more effective , the least satisfied the
+The above plot shows that the more effective, the more satisfied the
 subjects were. (TODO more explanation maybe)
 
 ### State answers to your questions;
