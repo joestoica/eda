@@ -104,28 +104,98 @@ df <- drugs %>%
   select(-benefitsReview, -sideEffectsReview, -commentsReview, -X1, -condition) %>% 
   # recode likert to 1-5 scale 
   mutate(effectiveness = case_when(
-    effectiveness == "Ineffective" ~ 5,
-    effectiveness == "Marginally Effective" ~ 4, 
+    effectiveness == "Highly Effective" ~ 5,
+    effectiveness == "Marginally Effective" ~ 2, 
     effectiveness == "Moderately Effective" ~ 3, 
-    effectiveness == "Considerably Effective" ~ 2,
+    effectiveness == "Considerably Effective" ~ 4,
     TRUE ~ 1)) %>% 
   mutate(sideEffects = case_when(
-    sideEffects == "Extremely Severe" ~ 1, 
+    sideEffects == "Extremely Severe Side Effects" ~ 1, 
     sideEffects == "Severe Side Effects" ~ 2, 
     sideEffects == "Moderate Side Effects" ~ 3, 
     sideEffects == "Mild Side Effects" ~ 4, 
-    TRUE ~ 5))
+    TRUE ~ 5)) %>% 
+  rename(drug = urlDrugName)%>% 
+  mutate(drug = case_when(
+    drug == "wellbutrin-xl" ~ "wellbutrin",
+    drug == "wellbutrin-sr" ~ "wellbutrin",
+    drug == "paxil-cr" ~ "paxil",
+    drug == "effexor-xr" ~ "effexor",
+    TRUE ~ drug
+  ))
+```
+
+```{r make drug table}
+SRI_list <- c("Celexa",
+              "Citalopram",
+              "Lexapro",
+              "Paxil",
+              "Prozac",
+              "Zoloft",
+              "Sarafem",
+              "Symbyax",
+              "Desyrel",
+              "Trazodone")
+
+AAP_list = c("Abilify", "Zyprexa")
+
+
+AMP_list <- c("Adderall",
+              "Dextroamphetamine",
+              "Vyvanse")
+
+OPD_list <-  c("buprenorphine", "tramadol")
+
+NRI_list <- c("Concerta",
+              "Wellbutrin",
+              "Effexor",
+              "Serzone",
+              "Pristiq",
+              "Cymbalta")
+
+BNZ_list <- c("Diazepam",
+              "Klonopin",
+              "Valium",
+              "Xanax")
+
+TCA_list <-  c("Elavil",
+               "nortriptyline",
+               "Pamelor")
+
+MOAI_list <- c("Emsam",
+               "Nardil")
+
+MISC_list <- c("Lamictal",
+               "Lamotrigine",
+               "Lithium-Carbonate",
+               "Mirtazapine",
+               "Gabapentine",
+               "prempro",
+               "remeron",
+               "Sular",
+               "synthroid")
+
+type_list <- c(rep("AAP", 2), rep("AMP", 3), rep("BNZ", 4), rep("MISC", 9), rep("MOAI", 2),
+               rep("NRI", 6), rep("OPD", 2), rep("SRI", 10), rep("TCA", 3))
+drug_list <- c(AAP_list, AMP_list, BNZ_list, MISC_list, MOAI_list, NRI_list, OPD_list, SRI_list, TCA_list)
+
+drug_table <- data.frame(drug = tolower(drug_list), type = type_list)
+
+# join drug data with drug type
+df <- df %>% left_join(drug_table, by = "drug")
 ```
 
 
+
 ```{r }
-drugs %>% 
-  ggplot(aes(SideEffects, fill = factor(Satisfaction))) +
+df %>% 
+  ggplot(aes(factor(sideEffects), fill = factor(rating))) +
   geom_bar(position = "stack") +
   theme(legend.position = "right",
         legend.direction = "vertical") +
   guides(fill = guide_legend(title = "Satisfaction")) +
   ylab("Count") +
+  xlab("Side Effect") + 
   coord_flip() +
   ggtitle("How Side Effects of the Drugs Affects Satisfaction")+
   scale_fill_viridis_d()
@@ -137,13 +207,14 @@ subjects were. (TODO more explanation maybe)
 
 
 ```{r}
-drugs %>% 
-  ggplot(aes(Effectiveness, fill = factor(Satisfaction))) +
+df %>% 
+  ggplot(aes(effectiveness, fill = factor(rating))) +
   geom_bar(position = "stack") +
   theme(legend.position = "right",
         legend.direction = "vertical") +
   guides(fill = guide_legend(title = "Satisfaction")) +
   ylab("Count") +
+  xlab("Effectiveness") + 
   coord_flip() +
   ggtitle("How Drugs Effectiveness Affects Satisfaction") +
   scale_fill_viridis_d()
