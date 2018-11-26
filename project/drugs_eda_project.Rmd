@@ -67,7 +67,6 @@ Side Effects:
 
 Type: Chemical type of the drug  
 
-
 # Answering your questions.
 ## This is the most important criterion. It will probably include (but is not limited to) fitting a statistical model or models of some kind, and showing that these models tell you something of interest. You should do the following (not necessarily in this order):
 
@@ -76,11 +75,46 @@ Type: Chemical type of the drug
 
 ```{r data import}
 # From https://archive.ics.uci.edu/ml/datasets/Drug+Review+Dataset+%28Druglib.com%29#
-drugs <- read_csv("drugData.csv")
+#drugs <- read_csv("drugData.csv")
+drugs_test <- read_csv(file = 'drugLibTest_raw.csv')
+
+drugs_train <- read_csv(file = 'drugLibTrain_raw.csv')
+
+drugs <- rbind(drugs_test, drugs_train) %>% as.tibble() 
 ```
 
-```{r data cleaning}
+1. filter all rows for which the condition is for anything related to “depression”
+so basically just look for the string “depression” in that column where condition is listed.
+this includes depression + any other comorbidities
+2. delete the comments column where people describe their experience w/ the drug etc.
+3. for the drug names (e.g. lexapro etc.) any drug that has a hyphenated add-on such as drugname-xr or whatever, just remove that hyphenated part so you’re just left with “drugname”, for the simplicity we’re gonna ignore different versions of the same drug (paxil-xr vs paxil)
+just treat paxil-xr as belonging to paxil
 
+and finally, the column that i added but was not part of the original data set was drug pharmacology (e.g. SRI, NRI, Amphetamines, etc.)
+
+i basically had to manually make a table of contents for which family each drug name belonged to
+but u won’t need to since you can find out that grouping from the csv file i uploaded
+all those steps summarize what was done to get the data in the form it is now.
+
+```{r data cleaning}
+df <- drugs %>% 
+  # keep people who are depressed
+  filter(str_detect(condition, 'epress')) %>% 
+  # get rid of unnecessary columns
+  select(-benefitsReview, -sideEffectsReview, -commentsReview, -X1, -condition) %>% 
+  # recode likert to 1-5 scale 
+  mutate(effectiveness = case_when(
+    effectiveness == "Ineffective" ~ 5,
+    effectiveness == "Marginally Effective" ~ 4, 
+    effectiveness == "Moderately Effective" ~ 3, 
+    effectiveness == "Considerably Effective" ~ 2,
+    TRUE ~ 1)) %>% 
+  mutate(sideEffects = case_when(
+    sideEffects == "Extremely Severe" ~ 1, 
+    sideEffects == "Severe Side Effects" ~ 2, 
+    sideEffects == "Moderate Side Effects" ~ 3, 
+    sideEffects == "Mild Side Effects" ~ 4, 
+    TRUE ~ 5))
 ```
 
 
