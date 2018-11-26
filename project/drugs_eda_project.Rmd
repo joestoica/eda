@@ -25,7 +25,26 @@ theme_set(theme_fivethirtyeight() + theme(axis.title = element_text()))
 ```
 
 # Statement of goals.
-## What questions are you trying to address?  
+## What questions are you trying to address? 
+Some preliminary questions 
+
+### 1.	What is the relationship between perceived side effects and overall satisfaction? 
+
+### 2.	What is the relationship between perceived effectiveness and overall satisfaction? 
+
+### 3.	What is the relation between perceived side effects and perceived effectiveness? 
+#### a.	Though intuitively one may assume that more severe side effects would be associated with lower perceived effectiveness, it is also possible that effectiveness-sideeffect trade-offs are nonetheless perceived as a net benefit to the patient (where perceived benefits of the drug for daily life quality outweigh their negative side effects). Are there certain classes of drugs or specific drugs where the  relationships are different or does it hold true across all drugs?
+
+### 4. What is the breakdown of the types of drugs used for treating depression (or other mood disorders).
+
+#### a. This can be a simple pie chart showing the relative proportions of serotonin-reuptake inhibiting drugs (SRIs), norepinephrine-mechanism drugs (NRIs), Amphetamines (AMP), etc…
+
+### 5. How do certain classes of drugs compare in terms of their perceived side effects, effectiveness and overall satisfaction?
+
+#### a. SRIs and NRIs are probably the most popular of options, but are they actually superior along   these dimensions of perception? 
+
+#### b. Can probably do Multinomial regression to address this question; if we do this, may be worth excluding some drug classes that have very few cases, and focusing on those classes that represent a  sizeable portion of the data. These analyses are covered in Lecture 25, slide 28. 
+
 
 ## Why do you care?   
 
