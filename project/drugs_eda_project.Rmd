@@ -250,3 +250,49 @@ subjects were. (TODO more explanation maybe)
 
 # Identification of work left to do/limitations.
 ## It’s EDA, so we don’t require perfection. However, you should have a clear idea of what the imperfections in your work are (what doesn’t fit  well?   what  other  variables  would  you  really want  to  know?),  and  how  they  could potentially be addressed.
+
+```{r}
+alligator <- import("https://jfukuyama.github.io/teaching/stat670/notes/alligator.txt")
+library(ggmosaic)
+ggplot(alligator) +
+  geom_mosaic(aes(product(food, lake), weight = count, fill = food)) +
+  xlab("Lake") + ylab("Proportion of gators at that lake")
+
+head(alligator)
+```
+
+```{r}
+x <- df %>% 
+  filter(type %in% c("SRI", "NRI")) %>% 
+  droplevels() %>% 
+  select(type, effectiveness, sideEffects, rating) %>%
+  gather("rating_type", "given_score", sideEffects, effectiveness, rating) %>% 
+  group_by(type, rating_type) %>% 
+  count(given_score)
+
+names(x) = c("drug_type", "rating_type", "given_score", "count")
+
+ggplot(x) +
+  geom_mosaic(aes(product(drug_type, rating_type), 
+                  weight = count, 
+                  fill = factor(given_score)))+
+  theme_fivethirtyeight() + 
+  guides(fill = guide_legend("score")) +
+  coord_flip() + 
+  facet_grid(. ~ rating_type) + 
+  scale_fill_viridis_d() + 
+  theme(legend.position = "right", 
+        legend.direction = "vertical")
+
+df %>% 
+  group_by(type) %>% 
+  count() %>% 
+  arrange(desc(n))
+
+df %>% 
+```
+
+
+
+
+
