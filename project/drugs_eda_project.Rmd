@@ -129,12 +129,12 @@ df <- drugs %>%
     effectiveness == "Considerably Effective" ~ 4,
     TRUE ~ 1)) %>% 
   mutate(sideEffects = case_when(
-    sideEffects == "Extremely Severe Side Effects" ~ 1, 
-    sideEffects == "Severe Side Effects" ~ 2, 
+    sideEffects == "Extremely Severe Side Effects" ~ 5, 
+    sideEffects == "Severe Side Effects" ~ 4, 
     sideEffects == "Moderate Side Effects" ~ 3, 
-    sideEffects == "Mild Side Effects" ~ 4, 
-    TRUE ~ 5)) %>% 
-  rename(drug = urlDrugName)%>% 
+    sideEffects == "Mild Side Effects" ~ 2, 
+    TRUE ~ 1)) %>% 
+  rename(drug = urlDrugName) %>% 
   mutate(drug = case_when(
     drug == "wellbutrin-xl" ~ "wellbutrin",
     drug == "wellbutrin-sr" ~ "wellbutrin",
@@ -161,7 +161,8 @@ AAP_list = c("Abilify", "Zyprexa","seroquel")
 
 AMP_list <- c("Adderall",
               "Dextroamphetamine",
-              "Vyvanse")
+              "Vyvanse",
+              "ritalin")
 
 OPD_list <-  c("buprenorphine", "tramadol")
 
@@ -193,9 +194,11 @@ MISC_list <- c("Lamictal",
                "prempro",
                "remeron",
                "Sular",
-               "synthroid")
+               "synthroid",
+               "tirosint",
+               "topamax")
 
-type_list <- c(rep("AAP", 3), rep("AMP", 3), rep("BNZ", 4), rep("MISC", 10), rep("MOAI", 2),
+type_list <- c(rep("AAP", 3), rep("AMP", 4), rep("BNZ", 4), rep("MISC", 12), rep("MOAI", 2),
                rep("NRI", 6), rep("OPD", 2), rep("SRI", 10), rep("TCA", 3))
 drug_list <- c(AAP_list, AMP_list, BNZ_list, MISC_list, MOAI_list, NRI_list, OPD_list, SRI_list, TCA_list)
 
@@ -210,12 +213,12 @@ df <- df %>% left_join(drug_table, by = "drug")
 ```{r }
 df %>% 
   ggplot(aes(factor(sideEffects), fill = factor(rating))) +
-  geom_bar(position = "stack") +
+  geom_bar(position = "fill") +
   theme(legend.position = "right",
         legend.direction = "vertical") +
   guides(fill = guide_legend(title = "Satisfaction")) +
-  ylab("Count") +
-  xlab("Side Effect") + 
+  ylab("Proportion") +
+  xlab("Side Effects Ratings") + 
   coord_flip() +
   ggtitle("How Side Effects of the Drugs Affects Satisfaction")+
   scale_fill_viridis_d()
@@ -229,7 +232,7 @@ subjects were. (TODO more explanation maybe)
 ```{r}
 df %>% 
   ggplot(aes(effectiveness, fill = factor(rating))) +
-  geom_bar(position = "stack") +
+  geom_bar(position = "fill") +
   theme(legend.position = "right",
         legend.direction = "vertical") +
   guides(fill = guide_legend(title = "Satisfaction")) +
@@ -239,9 +242,25 @@ df %>%
   ggtitle("How Drugs Effectiveness Affects Satisfaction") +
   scale_fill_viridis_d()
 ```
-
 The above plot shows that the more effective, the more satisfied the
 subjects were. (TODO more explanation maybe)
+
+
+Show mosaic plot for different patient ratings by drug type
+
+```{r}
+install.packages('ggmosaic')
+library(ggmosaic)
+library(plyr)
+df %>% 
+  select(type, sideEffects) %>%
+  gather("key", "value", sideEffects)
+
+```
+
+
+show pie chart of the proportions of different drug types for treating depression-related disability
+
 
 ### State answers to your questions;
 
