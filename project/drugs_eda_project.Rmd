@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = FALSE,
 library(tidyverse)
 library(lubridate)
 library(ggthemes)
+library(ggmosaic)
 ```
 
 
@@ -129,19 +130,21 @@ df <- drugs %>%
     effectiveness == "Considerably Effective" ~ 4,
     TRUE ~ 1)) %>% 
   mutate(sideEffects = case_when(
-    sideEffects == "Extremely Severe Side Effects" ~ 5, 
-    sideEffects == "Severe Side Effects" ~ 4, 
+    sideEffects == "Extremely Severe Side Effects" ~ 1, 
+    sideEffects == "Severe Side Effects" ~ 2, 
     sideEffects == "Moderate Side Effects" ~ 3, 
-    sideEffects == "Mild Side Effects" ~ 2, 
-    TRUE ~ 1)) %>% 
-  rename(drug = urlDrugName) %>% 
-  mutate(drug = case_when(
-    drug == "wellbutrin-xl" ~ "wellbutrin",
-    drug == "wellbutrin-sr" ~ "wellbutrin",
-    drug == "paxil-cr" ~ "paxil",
-    drug == "effexor-xr" ~ "effexor",
-    TRUE ~ drug
+    sideEffects == "Mild Side Effects" ~ 4, 
+    TRUE ~ 5)) %>% 
+  mutate(urlDrugName = case_when(
+    urlDrugName == "wellbutrin-xl" ~ "wellbutrin",
+    urlDrugName == "wellbutrin-sr" ~ "wellbutrin",
+    urlDrugName == "paxil-cr" ~ "paxil",
+    urlDrugName == "effexor-xr" ~ "effexor",
+    TRUE ~ urlDrugName
   ))
+
+names(df)[1] <- "drug"
+
 ```
 
 ```{r make drug table}
@@ -236,7 +239,7 @@ df %>%
   theme(legend.position = "right",
         legend.direction = "vertical") +
   guides(fill = guide_legend(title = "Satisfaction")) +
-  ylab("Count") +
+  ylab("Proportion") +
   xlab("Effectiveness") + 
   coord_flip() +
   ggtitle("How Drugs Effectiveness Affects Satisfaction") +
@@ -247,17 +250,6 @@ subjects were. (TODO more explanation maybe)
 
 
 Show mosaic plot for different patient ratings by drug type
-
-```{r}
-install.packages('ggmosaic')
-library(ggmosaic)
-library(plyr)
-df %>% 
-  select(type, sideEffects) %>%
-  gather("key", "value", sideEffects)
-
-```
-
 
 show pie chart of the proportions of different drug types for treating depression-related disability
 
@@ -272,47 +264,36 @@ show pie chart of the proportions of different drug types for treating depressio
 ## It’s EDA, so we don’t require perfection. However, you should have a clear idea of what the imperfections in your work are (what doesn’t fit  well?   what  other  variables  would  you  really want  to  know?),  and  how  they  could potentially be addressed.
 
 ```{r}
-alligator <- import("https://jfukuyama.github.io/teaching/stat670/notes/alligator.txt")
-library(ggmosaic)
-ggplot(alligator) +
-  geom_mosaic(aes(product(food, lake), weight = count, fill = food)) +
-  xlab("Lake") + ylab("Proportion of gators at that lake")
-
-head(alligator)
-```
-
-```{r}
-x <- df %>% 
+x <-  df %>% 
   filter(type %in% c("SRI", "NRI")) %>% 
   droplevels() %>% 
   select(type, effectiveness, sideEffects, rating) %>%
-  gather("rating_type", "given_score", sideEffects, effectiveness, rating) %>% 
+  gather(key = "rating_type", value = "given_score", sideEffects, effectiveness, rating) %>% 
   group_by(type, rating_type) %>% 
-  count(given_score)
+  count()
 
 names(x) = c("drug_type", "rating_type", "given_score", "count")
+```
 
-ggplot(x) +
+```{r}
+x %>% 
+  filter(rating_type %in% c("effectiveness", "sideEffects")) %>% 
+  mutate(rating_type = case_when(
+    rating_type == "effectiveness" ~ "User Rating of Effectiveness",
+    TRUE ~ "User Rating of Side Effects")) %>% 
+  ggplot() +
   geom_mosaic(aes(product(drug_type, rating_type), 
                   weight = count, 
                   fill = factor(given_score)))+
   theme_fivethirtyeight() + 
-  guides(fill = guide_legend("score")) +
+  guides(fill = guide_legend("Rating",reverse = TRUE)) +
   coord_flip() + 
   facet_grid(. ~ rating_type) + 
   scale_fill_viridis_d() + 
   theme(legend.position = "right", 
-        legend.direction = "vertical")
-
-df %>% 
-  group_by(type) %>% 
-  count() %>% 
-  arrange(desc(n))
-
-df %>% 
+        legend.direction = "vertical",
+        axis.text.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 ```
-
-
-
-
 
