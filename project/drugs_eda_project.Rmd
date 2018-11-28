@@ -121,7 +121,7 @@ df <- drugs %>%
   # keep people who are depressed
   filter(str_detect(condition, 'epress')) %>% 
   # get rid of unnecessary columns
-  select(-sideEffectsReview, -commentsReview, -X1, -condition) %>% 
+  select(-c(sideEffectsReview, benefitsReview, commentsReview, X1, condition)) %>% 
   # recode likert to 1-5 scale 
   mutate(effectiveness = case_when(
     effectiveness == "Highly Effective" ~ 5,
@@ -144,7 +144,7 @@ df <- drugs %>%
   ))
 
 names(df)[1] <- "drug"
-
+colnames(drugs)
 ```
 
 ```{r make drug table}
@@ -286,15 +286,15 @@ show pie chart of the proportions of different drug types for treating depressio
 
 ```{r make mosiac df}
 # Set up data frame for mosaic plots
-x <-  df %>% 
+x <- df %>% 
   select(type, effectiveness, sideEffects, rating) %>%
   gather(key = "rating_type", value = "given_score", sideEffects, effectiveness, rating) %>% 
-  group_by(type, rating_type) %>% 
+  group_by(type, rating_type, given_score) %>% 
   count()
 
-names(x) = c("drug_type", "rating_type", "given_score", "count")
+names(x) = c("type", "rating_type", "given_score", "count")
 
-x$drug_type = factor(x$drug_type, levels = c("NRI", "SRI", "Other"))
+x$type = factor(x$type, levels = c("NRI", "SRI", "Other"))
 ```
 
 ```{r drug type mosaic}
@@ -302,7 +302,7 @@ x$drug_type = factor(x$drug_type, levels = c("NRI", "SRI", "Other"))
 x %>%
   filter(rating_type %in% c("rating")) %>%
   ggplot() +
-  geom_mosaic(aes(product(drug_type, rating_type),
+  geom_mosaic(aes(product(type, rating_type),
                   weight = count,
                   fill = factor(given_score))) +
   theme_fivethirtyeight() +
@@ -321,12 +321,13 @@ x %>%
 Mosaic plot of user ratings of drug effectiveness and side effects by drug type (SRI vs NRIs)
 ```{r mosaic}
 x %>% 
+  ungroup() %>% 
   filter(rating_type %in% c("effectiveness", "sideEffects")) %>% 
   mutate(rating_type = case_when(
     rating_type == "effectiveness" ~ "User Rating of Effectiveness",
     TRUE ~ "User Rating of Side Effects")) %>% 
   ggplot() +
-  geom_mosaic(aes(product(drug_type, rating_type), 
+  geom_mosaic(aes(product(type, rating_type), 
                   weight = count, 
                   fill = factor(given_score)))+
   theme_fivethirtyeight() + 
@@ -340,28 +341,6 @@ x %>%
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank()) + 
   ggtitle("How do User Ratings Differ Across Drug Types?")
-```
-
-
-```{r bar chart for counts}
-temp <- df %>% 
-  filter(type %in% c("SRI", "NRI")) %>% 
-  select(drug, type) %>% 
-  group_by(drug) %>% 
-  count()
-
-temp$drug = factor(temp$drug, levels = temp[order(temp$freq), 'drug'])
-
-temp %>% 
-  ggplot(aes(drug, freq)) +
-  geom_bar(stat = "identity") + 
-  coord_flip() + 
-  facet_wrap(.~type, scales = "free") +
-  ylab("Count") +
-  xlab("Drug") + 
-  ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
-  theme(plot.title = element_text(size = 14),
-        panel.grid.major.y = element_blank())
 ```
 
 ```{r scatter plot}
@@ -381,4 +360,39 @@ df %>%
   ggtitle("Effectiveness and Side Effects Rating with Overall User Rating")
 ```
 
+```{r bar chart for counts}
+temp <- df %>% 
+  filter(type %in% c("SRI", "NRI")) %>% 
+  select(drug, type) %>% 
+  group_by(drug, type) %>% 
+  count() %>% 
+  ungroup()
 
+# vec <- temp %>% 
+#   arrange(n) %>% 
+#   select(drug)
+# dput(vec)
+
+# I got it from the vec output, this is ugly 
+temp$drug = factor(temp$drug, levels = c("concerta", "desyrel", "serzone", "symbyax", 
+"trazodone", "pristiq", "sarafem", "celexa", "citalopram", "cymbalta", 
+"zoloft", "paxil", "prozac", "lexapro", "effexor", "wellbutrin"))
+
+temp %>% 
+  ggplot(aes(drug, n)) +
+  geom_bar(stat = "identity") + 
+  coord_flip() + 
+  facet_wrap(.~type, scales = "free") +
+  ylab("Count") +
+  xlab("Drug") + 
+  ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
+  theme(plot.title = element_text(size = 14),
+        panel.grid.major.y = element_blank())
+```
+
+
+```{r}
+df <- df %>% as.tibble()
+drugs_polr <- MASS::polr(factor(rating) ~ as.numeric(effectiveness) + as.numeric(sideEffects), data = df)
+summary(drugs_polr)
+```
