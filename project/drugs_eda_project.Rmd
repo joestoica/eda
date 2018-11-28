@@ -263,6 +263,7 @@ show pie chart of the proportions of different drug types for treating depressio
 # Identification of work left to do/limitations.
 ## It’s EDA, so we don’t require perfection. However, you should have a clear idea of what the imperfections in your work are (what doesn’t fit  well?   what  other  variables  would  you  really want  to  know?),  and  how  they  could potentially be addressed.
 
+Set up data frame for mosaic plots
 ```{r}
 x <-  df %>% 
   filter(type %in% c("SRI", "NRI")) %>% 
@@ -318,5 +319,36 @@ x %>%
         axis.text.y = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
+```
+
+Show specific drug brand counts within drug types SRI and NRI
+```{r}
+SRI.drugprev = df %>%
+  filter(type %in% c("SRI")) %>%
+  select(drug) %>%
+  count() %>%
+  arrange(desc(freq))
+
+# lock in factor orderings by prevalence
+SRI.drugprev$drug <- factor(SRI.drugprev$drug, levels = SRI.drugprev$drug[order(SRI.drugprev$freq)])
+
+ggplot(data = SRI.drugprev, aes(x=drug,y=freq)) +
+  geom_bar(stat = "identity") + coord_flip() +
+  xlab("Drug Brand") + ylab("Prevalence")
+```
+
+```{r}
+NRI.drugprev = df %>%
+  filter(type %in% c("NRI")) %>%
+  select(drug) %>%
+  count() %>%
+  arrange(desc(freq))
+
+# lock in factor ordering by prevalence
+NRI.drugprev$drug <- factor(NRI.drugprev$drug, levels = NRI.drugprev$drug[order(NRI.drugprev$freq)])
+
+ggplot(data = NRI.drugprev, aes(x=drug,y=freq)) +
+  geom_bar(stat = "identity") + coord_flip() +
+  xlab("Drug Brand") + ylab("Prevalence")
 ```
 
