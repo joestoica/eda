@@ -38,7 +38,7 @@ Some preliminary questions
 
 ### 4. What is the breakdown of the types of drugs used for treating depression (or other mood disorders).
 
-#### a. This can be a simple pie chart showing the relative proportions of serotonin-reuptake inhibiting drugs (SRIs), norepinephrine-mechanism drugs (NRIs), Amphetamines (AMP), etc…
+#### a. This can be a simple bar chart showing the relative proportions of serotonin-reuptake inhibiting drugs (SRIs), norepinephrine-mechanism drugs (NRIs), Amphetamines (AMP), etc…
 
 ### 5. How do certain classes of drugs compare in terms of their perceived side effects, effectiveness and overall satisfaction?
 
@@ -121,7 +121,7 @@ df <- drugs %>%
   # keep people who are depressed
   filter(str_detect(condition, 'epress')) %>% 
   # get rid of unnecessary columns
-  select(-benefitsReview, -sideEffectsReview, -commentsReview, -X1, -condition) %>% 
+  select(-sideEffectsReview, -commentsReview, -X1, -condition) %>% 
   # recode likert to 1-5 scale 
   mutate(effectiveness = case_when(
     effectiveness == "Highly Effective" ~ 5,
