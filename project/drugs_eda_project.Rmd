@@ -375,8 +375,8 @@ temp <- df %>%
 
 # I got it from the vec output, this is ugly 
 temp$drug = factor(temp$drug, levels = c("concerta", "desyrel", "serzone", "symbyax", 
-"trazodone", "pristiq", "sarafem", "celexa", "citalopram", "cymbalta", 
-"zoloft", "paxil", "prozac", "lexapro", "effexor", "wellbutrin"))
+                                         "trazodone", "pristiq", "sarafem", "celexa", "citalopram", "cymbalta", 
+                                         "zoloft", "paxil", "prozac", "lexapro", "effexor", "wellbutrin"))
 
 temp %>% 
   ggplot(aes(drug, n)) +
@@ -391,8 +391,33 @@ temp %>%
 ```
 
 
-```{r}
+```{r model creation}
 df <- df %>% as.tibble()
-drugs_polr <- MASS::polr(factor(rating) ~ as.numeric(effectiveness) + as.numeric(sideEffects), data = df)
-summary(drugs_polr)
+drugs_polr <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df)
+drugs_polr2 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df)
+
+drugs_polr2 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df)
+
+drugs_polr3 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df)
+
+drugs_polr
+drugs_polr2
+drugs_polr3
 ```
+
+I created three models all trying to predict rating. They all have side effects and effectiveness. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest Akaike information criterion (AIC). "[It] is an estimator of the relative quality of statistical models for a given set of data. Given a collection of models for the data, AIC estimates the quality of each model, relative to each of the other models. Thus, AIC provides a means for model selection.(stolen from wikipedia (https://en.wikipedia.org/wiki/Akaike_information_criterion)". So even though it doesnt have the lowest residual deviance, it is still the best model to use. Adding the sentiment analysis might improve it, however. 
+
+```{r}
+m1 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
+
+m2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df, family = "multinomial")
+
+m3 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df, family = "multinomial")
+
+deviance(m3)
+```
+
+Using multinomial logit model 3 might be better cause of lowest deviance
+
+
+
