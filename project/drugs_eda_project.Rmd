@@ -97,9 +97,7 @@ Type: Chemical type of the drug
 # From https://archive.ics.uci.edu/ml/datasets/Drug+Review+Dataset+%28Druglib.com%29#
 #drugs <- read_csv("drugData.csv")
 drugs_test <- read_csv(file = 'drugLibTest_raw.csv')
-
 drugs_train <- read_csv(file = 'drugLibTrain_raw.csv')
-
 drugs <- rbind(drugs_test, drugs_train) %>% as.tibble() 
 ```
 
@@ -115,6 +113,49 @@ and finally, the column that i added but was not part of the original data set w
 i basically had to manually make a table of contents for which family each drug name belonged to
 but u won’t need to since you can find out that grouping from the csv file i uploaded
 all those steps summarize what was done to get the data in the form it is now.
+
+install.packages('SentimentAnalysis')
+library(SentimentAnalysis)
+
+```{r}
+df_sent <- drugs %>%
+  filter(str_detect(condition, 'epress')) %>%
+  select(-c(sideEffectsReview, commentsReview, X1, condition)) %>% 
+  # recode likert to 1-5 scale 
+  mutate(effectiveness = case_when(
+    effectiveness == "Highly Effective" ~ 5,
+    effectiveness == "Marginally Effective" ~ 2, 
+    effectiveness == "Moderately Effective" ~ 3, 
+    effectiveness == "Considerably Effective" ~ 4,
+    TRUE ~ 1)) %>% 
+  mutate(sideEffects = case_when(
+    sideEffects == "Extremely Severe Side Effects" ~ 1, 
+    sideEffects == "Severe Side Effects" ~ 2, 
+    sideEffects == "Moderate Side Effects" ~ 3, 
+    sideEffects == "Mild Side Effects" ~ 4, 
+    TRUE ~ 5)) %>% 
+  mutate(urlDrugName = case_when(
+    urlDrugName == "wellbutrin-xl" ~ "wellbutrin",
+    urlDrugName == "wellbutrin-sr" ~ "wellbutrin",
+    urlDrugName == "paxil-cr" ~ "paxil",
+    urlDrugName == "effexor-xr" ~ "effexor",
+    TRUE ~ urlDrugName
+  ))
+names(df_sent)[1] <- "drug"
+colnames(drugs)
+```
+```{r}
+getSent = function(review) {
+  sentiment <- analyzeSentiment(review)
+  sentBinary <- convertToBinaryResponse(sentiment)$SentimentGI
+  return(as.character(sentBinary))
+}
+
+# This takes really long to execute so leave commented out. 
+# for(i in 1:nrow(df_sent)){
+#  df_sent$benefitsReview[i] <- getSent(df_sent$benefitsReview[i])
+# }
+```
 
 ```{r data cleaning}
 df <- drugs %>% 
@@ -142,7 +183,6 @@ df <- drugs %>%
     urlDrugName == "effexor-xr" ~ "effexor",
     TRUE ~ urlDrugName
   ))
-
 names(df)[1] <- "drug"
 colnames(drugs)
 ```
@@ -158,36 +198,27 @@ SRI_list <- c("Celexa",
               "Symbyax",
               "Desyrel",
               "Trazodone")
-
 AAP_list = c("Abilify", "Zyprexa","seroquel")
-
-
 AMP_list <- c("Adderall",
               "Dextroamphetamine",
               "Vyvanse",
               "ritalin")
-
 OPD_list <-  c("buprenorphine", "tramadol")
-
 NRI_list <- c("Concerta",
               "Wellbutrin",
               "Effexor",
               "Serzone",
               "Pristiq",
               "Cymbalta")
-
 BNZ_list <- c("Diazepam",
               "Klonopin",
               "Valium",
               "Xanax")
-
 TCA_list <-  c("Elavil",
                "nortriptyline",
                "Pamelor")
-
 MOAI_list <- c("Emsam",
                "Nardil")
-
 MISC_list <- c("Lamictal",
                "Lamotrigine",
                "Lithium-Carbonate",
@@ -200,16 +231,12 @@ MISC_list <- c("Lamictal",
                "synthroid",
                "tirosint",
                "topamax")
-
 type_list <- c(rep("AAP", 3), rep("AMP", 4), rep("BNZ", 4), rep("MISC", 12), rep("MOAI", 2),
                rep("NRI", 6), rep("OPD", 2), rep("SRI", 10), rep("TCA", 3))
 drug_list <- c(AAP_list, AMP_list, BNZ_list, MISC_list, MOAI_list, NRI_list, OPD_list, SRI_list, TCA_list)
-
 drug_table <- data.frame(drug = tolower(drug_list), type = type_list)
-
 # join drug data with drug type
 df <- df %>% left_join(drug_table, by = "drug")
-
 df <- df %>% 
   mutate(type = ifelse(type %in% c("SRI", "NRI"), as.character(type), "Other"))
 ```
@@ -291,9 +318,7 @@ x <- df %>%
   gather(key = "rating_type", value = "given_score", sideEffects, effectiveness, rating) %>% 
   group_by(type, rating_type, given_score) %>% 
   count()
-
 names(x) = c("type", "rating_type", "given_score", "count")
-
 x$type = factor(x$type, levels = c("NRI", "SRI", "Other"))
 ```
 
@@ -367,16 +392,12 @@ temp <- df %>%
   group_by(drug, type) %>% 
   count() %>% 
   ungroup()
-
 # vec <- temp %>% 
 #   arrange(n) %>% 
 #   select(drug)
 # dput(vec)
-
 # I got it from the vec output, this is ugly 
-temp$drug = factor(temp$drug, levels = c("concerta", "desyrel", "serzone", "symbyax", 
-                                         "trazodone", "pristiq", "sarafem", "celexa", "citalopram", "cymbalta", 
-                                         "zoloft", "paxil", "prozac", "lexapro", "effexor", "wellbutrin"))
+temp$drug = factor(temp$drug, levels = c("concerta", "desyrel", "serzone", "symbyax", "trazodone", "pristiq", "sarafem", "celexa", "citalopram", "cymbalta",  "zoloft", "paxil", "prozac", "lexapro", "effexor", "wellbutrin"))
 
 temp %>% 
   ggplot(aes(drug, n)) +
