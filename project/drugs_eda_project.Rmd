@@ -209,6 +209,9 @@ drug_table <- data.frame(drug = tolower(drug_list), type = type_list)
 
 # join drug data with drug type
 df <- df %>% left_join(drug_table, by = "drug")
+
+df <- df %>% 
+  mutate(type = ifelse(type %in% c("SRI", "NRI"), as.character(type), "Other"))
 ```
 
 
@@ -234,16 +237,22 @@ subjects were. (TODO more explanation maybe)
 
 ```{r}
 df %>% 
+  mutate(effectiveness = case_when(
+    effectiveness == 
+  ))
   ggplot(aes(effectiveness, fill = factor(rating))) +
   geom_bar(position = "fill") +
   theme(legend.position = "right",
-        legend.direction = "vertical") +
+        legend.direction = "vertical",
+        plot.subtitle = element_text(size = 8, color = "black")) +
   guides(fill = guide_legend(title = "Satisfaction")) +
   ylab("Proportion") +
   xlab("Effectiveness") + 
+  labs(title = "How Drugs Effectiveness Affects Satisfaction",
+       subtitle = "1 - Ineffective, 2 - Marginally Effective, 3 - Moderately Effective, 4 - Considerably Effective, 5 - Highly Effective") +
   coord_flip() +
-  ggtitle("How Drugs Effectiveness Affects Satisfaction") +
-  scale_fill_viridis_d()
+  scale_fill_viridis_d() 
+  
 ```
 The above plot shows that the more effective, the more satisfied the
 subjects were. (TODO more explanation maybe)
@@ -263,19 +272,19 @@ show pie chart of the proportions of different drug types for treating depressio
 # Identification of work left to do/limitations.
 ## It’s EDA, so we don’t require perfection. However, you should have a clear idea of what the imperfections in your work are (what doesn’t fit  well?   what  other  variables  would  you  really want  to  know?),  and  how  they  could potentially be addressed.
 
-```{r}
+```{r make mosiac df}
 x <-  df %>% 
-  filter(type %in% c("SRI", "NRI")) %>% 
-  droplevels() %>% 
   select(type, effectiveness, sideEffects, rating) %>%
   gather(key = "rating_type", value = "given_score", sideEffects, effectiveness, rating) %>% 
   group_by(type, rating_type) %>% 
   count()
 
 names(x) = c("drug_type", "rating_type", "given_score", "count")
+
+x$drug_type = factor(x$drug_type, levels = c("NRI", "SRI", "Other"))
 ```
 
-```{r}
+```{r drug type mosaic}
 x %>% 
   filter(rating_type %in% c("effectiveness", "sideEffects")) %>% 
   mutate(rating_type = case_when(
@@ -294,6 +303,7 @@ x %>%
         legend.direction = "vertical",
         axis.text.y = element_blank(),
         panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank()) + 
+  ggtitle("How do User Ratings Differ Across Drug Types?")
 ```
 
