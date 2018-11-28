@@ -97,9 +97,7 @@ Type: Chemical type of the drug
 # From https://archive.ics.uci.edu/ml/datasets/Drug+Review+Dataset+%28Druglib.com%29#
 #drugs <- read_csv("drugData.csv")
 drugs_test <- read_csv(file = 'drugLibTest_raw.csv')
-
 drugs_train <- read_csv(file = 'drugLibTrain_raw.csv')
-
 drugs <- rbind(drugs_test, drugs_train) %>% as.tibble() 
 ```
 
@@ -116,12 +114,13 @@ i basically had to manually make a table of contents for which family each drug 
 but u won’t need to since you can find out that grouping from the csv file i uploaded
 all those steps summarize what was done to get the data in the form it is now.
 
-```{r data cleaning}
-df <- drugs %>% 
-  # keep people who are depressed
-  filter(str_detect(condition, 'epress')) %>% 
-  # get rid of unnecessary columns
-  select(-benefitsReview, -sideEffectsReview, -commentsReview, -X1, -condition) %>% 
+install.packages('SentimentAnalysis')
+library(SentimentAnalysis)
+
+```{r}
+df_sent <- drugs %>%
+  filter(str_detect(condition, 'epress')) %>%
+  select(-c(sideEffectsReview, commentsReview, X1, condition)) %>% 
   # recode likert to 1-5 scale 
   mutate(effectiveness = case_when(
     effectiveness == "Highly Effective" ~ 5,
@@ -142,9 +141,50 @@ df <- drugs %>%
     urlDrugName == "effexor-xr" ~ "effexor",
     TRUE ~ urlDrugName
   ))
+names(df_sent)[1] <- "drug"
+colnames(drugs)
+```
+```{r}
+getSent = function(review) {
+  sentiment <- analyzeSentiment(review)
+  sentBinary <- convertToBinaryResponse(sentiment)$SentimentGI
+  return(as.character(sentBinary))
+}
 
+# This takes really long to execute so leave commented out. 
+# for(i in 1:nrow(df_sent)){
+#  df_sent$benefitsReview[i] <- getSent(df_sent$benefitsReview[i])
+# }
+```
+
+```{r data cleaning}
+df <- drugs %>% 
+  # keep people who are depressed
+  filter(str_detect(condition, 'epress')) %>% 
+  # get rid of unnecessary columns
+  select(-c(sideEffectsReview, benefitsReview, commentsReview, X1, condition)) %>% 
+  # recode likert to 1-5 scale 
+  mutate(effectiveness = case_when(
+    effectiveness == "Highly Effective" ~ 5,
+    effectiveness == "Marginally Effective" ~ 2, 
+    effectiveness == "Moderately Effective" ~ 3, 
+    effectiveness == "Considerably Effective" ~ 4,
+    TRUE ~ 1)) %>% 
+  mutate(sideEffects = case_when(
+    sideEffects == "Extremely Severe Side Effects" ~ 1, 
+    sideEffects == "Severe Side Effects" ~ 2, 
+    sideEffects == "Moderate Side Effects" ~ 3, 
+    sideEffects == "Mild Side Effects" ~ 4, 
+    TRUE ~ 5)) %>% 
+  mutate(urlDrugName = case_when(
+    urlDrugName == "wellbutrin-xl" ~ "wellbutrin",
+    urlDrugName == "wellbutrin-sr" ~ "wellbutrin",
+    urlDrugName == "paxil-cr" ~ "paxil",
+    urlDrugName == "effexor-xr" ~ "effexor",
+    TRUE ~ urlDrugName
+  ))
 names(df)[1] <- "drug"
-
+colnames(drugs)
 ```
 
 ```{r make drug table}
@@ -158,36 +198,27 @@ SRI_list <- c("Celexa",
               "Symbyax",
               "Desyrel",
               "Trazodone")
-
 AAP_list = c("Abilify", "Zyprexa","seroquel")
-
-
 AMP_list <- c("Adderall",
               "Dextroamphetamine",
               "Vyvanse",
               "ritalin")
-
 OPD_list <-  c("buprenorphine", "tramadol")
-
 NRI_list <- c("Concerta",
               "Wellbutrin",
               "Effexor",
               "Serzone",
               "Pristiq",
               "Cymbalta")
-
 BNZ_list <- c("Diazepam",
               "Klonopin",
               "Valium",
               "Xanax")
-
 TCA_list <-  c("Elavil",
                "nortriptyline",
                "Pamelor")
-
 MOAI_list <- c("Emsam",
                "Nardil")
-
 MISC_list <- c("Lamictal",
                "Lamotrigine",
                "Lithium-Carbonate",
@@ -200,15 +231,14 @@ MISC_list <- c("Lamictal",
                "synthroid",
                "tirosint",
                "topamax")
-
 type_list <- c(rep("AAP", 3), rep("AMP", 4), rep("BNZ", 4), rep("MISC", 12), rep("MOAI", 2),
                rep("NRI", 6), rep("OPD", 2), rep("SRI", 10), rep("TCA", 3))
 drug_list <- c(AAP_list, AMP_list, BNZ_list, MISC_list, MOAI_list, NRI_list, OPD_list, SRI_list, TCA_list)
-
 drug_table <- data.frame(drug = tolower(drug_list), type = type_list)
-
 # join drug data with drug type
 df <- df %>% left_join(drug_table, by = "drug")
+df <- df %>% 
+  mutate(type = ifelse(type %in% c("SRI", "NRI"), as.character(type), "Other"))
 ```
 
 
@@ -237,13 +267,16 @@ df %>%
   ggplot(aes(effectiveness, fill = factor(rating))) +
   geom_bar(position = "fill") +
   theme(legend.position = "right",
-        legend.direction = "vertical") +
+        legend.direction = "vertical",
+        plot.subtitle = element_text(size = 8, color = "black")) +
   guides(fill = guide_legend(title = "Satisfaction")) +
   ylab("Proportion") +
   xlab("Effectiveness") + 
-  coord_flip() +
-  ggtitle("Perceived Drug Effectiveness and Overall Satisfaction") +
-  scale_fill_viridis_d()
+  labs(title = "How Drugs Effectiveness Affects Satisfaction",
+       subtitle = "1 - Ineffective, 2 - Marginally Effective, 3 - Moderately Effective, 4 - Considerably Effective, 5 - Highly Effective") +
+  coord_flip() + 
+  scale_fill_viridis_d() +
+  ggtitle("Perceived Drug Effectiveness and Overall Satisfaction") 
 ```
 The above plot shows that the more effective, the more satisfied the
 subjects were. (TODO more explanation maybe)
@@ -277,50 +310,49 @@ show pie chart of the proportions of different drug types for treating depressio
 # Identification of work left to do/limitations.
 ## It’s EDA, so we don’t require perfection. However, you should have a clear idea of what the imperfections in your work are (what doesn’t fit  well?   what  other  variables  would  you  really want  to  know?),  and  how  they  could potentially be addressed.
 
-Set up data frame for mosaic plots
-```{r}
+
+```{r make mosiac df}
+# Set up data frame for mosaic plots
 x <- df %>% 
-  filter(type %in% c("SRI", "NRI")) %>% 
-  droplevels() %>% 
   select(type, effectiveness, sideEffects, rating) %>%
   gather(key = "rating_type", value = "given_score", sideEffects, effectiveness, rating) %>% 
-  group_by(type, rating_type) %>% 
+  group_by(type, rating_type, given_score) %>% 
   count()
-
-names(x) = c("drug_type", "rating_type", "given_score", "count")
+names(x) = c("type", "rating_type", "given_score", "count")
+x$type = factor(x$type, levels = c("NRI", "SRI", "Other"))
 ```
 
-Mosaic plot of user overall satisfaction with drug by drug type (SRI vs NRI)
-```{r}
+```{r drug type mosaic}
+# Mosaic plot of user overall satisfaction with drug by drug type (SRI vs NRI)
 x %>%
   filter(rating_type %in% c("rating")) %>%
-  mutate(rating_type = case_when(
-    rating_type == "rating" ~ "Overall Satisfaction Rating",
-    TRUE ~ "Overall Satisfaction Rating")) %>%
   ggplot() +
-  geom_mosaic(aes(product(drug_type, rating_type),
+  geom_mosaic(aes(product(type, rating_type),
                   weight = count,
                   fill = factor(given_score))) +
   theme_fivethirtyeight() +
-  guides(fill = guide_legend("Rating",reverse = TRUE)) +
+  guides(fill = guide_legend("Rating", reverse = TRUE)) +
   coord_flip() +
   scale_fill_viridis_d() +
   theme(legend.position = "right", 
         legend.direction = "vertical",
         axis.text.y = element_blank(),
         panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank(),
+        plot.title = element_text(size = 14)) +
+  ggtitle("How does Overall User Satsifaction Change Across Drug Types?")
 ```
 
 Mosaic plot of user ratings of drug effectiveness and side effects by drug type (SRI vs NRIs)
-```{r}
+```{r mosaic}
 x %>% 
+  ungroup() %>% 
   filter(rating_type %in% c("effectiveness", "sideEffects")) %>% 
   mutate(rating_type = case_when(
     rating_type == "effectiveness" ~ "User Rating of Effectiveness",
     TRUE ~ "User Rating of Side Effects")) %>% 
   ggplot() +
-  geom_mosaic(aes(product(drug_type, rating_type), 
+  geom_mosaic(aes(product(type, rating_type), 
                   weight = count, 
                   fill = factor(given_score)))+
   theme_fivethirtyeight() + 
@@ -332,37 +364,57 @@ x %>%
         legend.direction = "vertical",
         axis.text.y = element_blank(),
         panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank()) + 
+  ggtitle("How do User Ratings Differ Across Drug Types?")
 ```
 
-Show specific drug brand counts within drug types SRI and NRI
+```{r scatter plot}
+df %>% 
+  ggplot(aes(effectiveness, sideEffects, color = factor(rating))) +
+  geom_jitter(alpha = 0.4, width = 0.1, height = 0.1) +
+  # faceting doesn't really offer any additional insight
+  #facet_grid(.~type) +
+  xlab("Effectiveness Rating") +
+  ylab("Side Effects Rating") +
+  labs(color = "User Rating") +
+  scale_color_viridis_d() + 
+  theme(legend.position = "right",
+        legend.direction = "vertical",
+        plot.title = element_text(size=14)) +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
+  ggtitle("Effectiveness and Side Effects Rating with Overall User Rating")
+```
+
+```{r bar chart for counts}
+temp <- df %>% 
+  filter(type %in% c("SRI", "NRI")) %>% 
+  select(drug, type) %>% 
+  group_by(drug, type) %>% 
+  count() %>% 
+  ungroup()
+# vec <- temp %>% 
+#   arrange(n) %>% 
+#   select(drug)
+# dput(vec)
+# I got it from the vec output, this is ugly 
+temp$drug = factor(temp$drug, levels = c("concerta", "desyrel", "serzone", "symbyax", 
+"trazodone", "pristiq", "sarafem", "celexa", "citalopram", "cymbalta", 
+"zoloft", "paxil", "prozac", "lexapro", "effexor", "wellbutrin"))
+temp %>% 
+  ggplot(aes(drug, n)) +
+  geom_bar(stat = "identity") + 
+  coord_flip() + 
+  facet_wrap(.~type, scales = "free") +
+  ylab("Count") +
+  xlab("Drug") + 
+  ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
+  theme(plot.title = element_text(size = 14),
+        panel.grid.major.y = element_blank())
+```
+
+
 ```{r}
-SRI.drugprev = df %>%
-  filter(type %in% c("SRI")) %>%
-  select(drug) %>%
-  count() %>%
-  arrange(desc(freq))
-
-# lock in factor orderings by prevalence
-SRI.drugprev$drug <- factor(SRI.drugprev$drug, levels = SRI.drugprev$drug[order(SRI.drugprev$freq)])
-
-ggplot(data = SRI.drugprev, aes(x=drug,y=freq)) +
-  geom_bar(stat = "identity") + coord_flip() +
-  xlab("Drug Brand") + ylab("Prevalence")
+df <- df %>% as.tibble()
+drugs_polr <- MASS::polr(factor(rating) ~ as.numeric(effectiveness) + as.numeric(sideEffects), data = df)
+summary(drugs_polr)
 ```
-
-```{r}
-NRI.drugprev = df %>%
-  filter(type %in% c("NRI")) %>%
-  select(drug) %>%
-  count() %>%
-  arrange(desc(freq))
-
-# lock in factor ordering by prevalence
-NRI.drugprev$drug <- factor(NRI.drugprev$drug, levels = NRI.drugprev$drug[order(NRI.drugprev$freq)])
-
-ggplot(data = NRI.drugprev, aes(x=drug,y=freq)) +
-  geom_bar(stat = "identity") + coord_flip() +
-  xlab("Drug Brand") + ylab("Prevalence")
-```
-
