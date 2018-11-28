@@ -38,7 +38,7 @@ Some preliminary questions
 
 ### 4. What is the breakdown of the types of drugs used for treating depression (or other mood disorders).
 
-#### a. This can be a simple pie chart showing the relative proportions of serotonin-reuptake inhibiting drugs (SRIs), norepinephrine-mechanism drugs (NRIs), Amphetamines (AMP), etc…
+#### a. This can be a simple bar chart showing the relative proportions of serotonin-reuptake inhibiting drugs (SRIs), norepinephrine-mechanism drugs (NRIs), Amphetamines (AMP), etc…
 
 ### 5. How do certain classes of drugs compare in terms of their perceived side effects, effectiveness and overall satisfaction?
 
@@ -121,7 +121,7 @@ df <- drugs %>%
   # keep people who are depressed
   filter(str_detect(condition, 'epress')) %>% 
   # get rid of unnecessary columns
-  select(-benefitsReview, -sideEffectsReview, -commentsReview, -X1, -condition) %>% 
+  select(-sideEffectsReview, -commentsReview, -X1, -condition) %>% 
   # recode likert to 1-5 scale 
   mutate(effectiveness = case_when(
     effectiveness == "Highly Effective" ~ 5,
@@ -226,7 +226,7 @@ df %>%
   ylab("Proportion") +
   xlab("Side Effects Ratings") + 
   coord_flip() +
-  ggtitle("How Side Effects of the Drugs Affects Satisfaction")+
+  ggtitle("Drug Side Effects Ratings and Overall Satisfaction")+
   scale_fill_viridis_d()
 ```
 
@@ -237,9 +237,6 @@ subjects were. (TODO more explanation maybe)
 
 ```{r}
 df %>% 
-  mutate(effectiveness = case_when(
-    effectiveness == 
-  ))
   ggplot(aes(effectiveness, fill = factor(rating))) +
   geom_bar(position = "fill") +
   theme(legend.position = "right",
@@ -250,12 +247,26 @@ df %>%
   xlab("Effectiveness") + 
   labs(title = "How Drugs Effectiveness Affects Satisfaction",
        subtitle = "1 - Ineffective, 2 - Marginally Effective, 3 - Moderately Effective, 4 - Considerably Effective, 5 - Highly Effective") +
-  coord_flip() +
-  scale_fill_viridis_d() 
-  
+  coord_flip() + 
+  scale_fill_viridis_d() +
+  ggtitle("Perceived Drug Effectiveness and Overall Satisfaction") 
 ```
 The above plot shows that the more effective, the more satisfied the
 subjects were. (TODO more explanation maybe)
+
+```{r}
+df %>%
+  ggplot(aes(effectiveness, fill = factor(sideEffects))) +
+  geom_bar(position = "fill") + 
+  theme(legend.position = "right",
+        legend.direction = "vertical") +
+  guides(fill = guide_legend(title = "Side Effects Rating")) +
+  ylab("Proportion") +
+  xlab("Effectiveness") + 
+  coord_flip() +
+  ggtitle("Perceived Drug Effectiveness and Side Effects") +
+  scale_fill_viridis_d()
+```
 
 
 Show mosaic plot for different patient ratings by drug type
@@ -272,7 +283,9 @@ show pie chart of the proportions of different drug types for treating depressio
 # Identification of work left to do/limitations.
 ## It’s EDA, so we don’t require perfection. However, you should have a clear idea of what the imperfections in your work are (what doesn’t fit  well?   what  other  variables  would  you  really want  to  know?),  and  how  they  could potentially be addressed.
 
+
 ```{r make mosiac df}
+# Set up data frame for mosaic plots
 x <-  df %>% 
   select(type, effectiveness, sideEffects, rating) %>%
   gather(key = "rating_type", value = "given_score", sideEffects, effectiveness, rating) %>% 
@@ -285,6 +298,28 @@ x$drug_type = factor(x$drug_type, levels = c("NRI", "SRI", "Other"))
 ```
 
 ```{r drug type mosaic}
+# Mosaic plot of user overall satisfaction with drug by drug type (SRI vs NRI)
+x %>%
+  filter(rating_type %in% c("rating")) %>%
+  ggplot() +
+  geom_mosaic(aes(product(drug_type, rating_type),
+                  weight = count,
+                  fill = factor(given_score))) +
+  theme_fivethirtyeight() +
+  guides(fill = guide_legend("Rating", reverse = TRUE)) +
+  coord_flip() +
+  scale_fill_viridis_d() +
+  theme(legend.position = "right", 
+        legend.direction = "vertical",
+        axis.text.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.title = element_text(size = 14)) +
+  ggtitle("How does Overall User Satsifaction Change Across Drug Types?")
+```
+
+Mosaic plot of user ratings of drug effectiveness and side effects by drug type (SRI vs NRIs)
+```{r mosaic}
 x %>% 
   filter(rating_type %in% c("effectiveness", "sideEffects")) %>% 
   mutate(rating_type = case_when(
@@ -306,4 +341,44 @@ x %>%
         panel.grid.minor = element_blank()) + 
   ggtitle("How do User Ratings Differ Across Drug Types?")
 ```
+
+
+```{r bar chart for counts}
+temp <- df %>% 
+  filter(type %in% c("SRI", "NRI")) %>% 
+  select(drug, type) %>% 
+  group_by(drug) %>% 
+  count()
+
+temp$drug = factor(temp$drug, levels = temp[order(temp$freq), 'drug'])
+
+temp %>% 
+  ggplot(aes(drug, freq)) +
+  geom_bar(stat = "identity") + 
+  coord_flip() + 
+  facet_wrap(.~type, scales = "free") +
+  ylab("Count") +
+  xlab("Drug") + 
+  ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
+  theme(plot.title = element_text(size = 14),
+        panel.grid.major.y = element_blank())
+```
+
+```{r scatter plot}
+df %>% 
+  ggplot(aes(effectiveness, sideEffects, color = factor(rating))) +
+  geom_jitter(alpha = 0.4, width = 0.1, height = 0.1) +
+  # faceting doesn't really offer any additional insight
+  #facet_grid(.~type) +
+  xlab("Effectiveness Rating") +
+  ylab("Side Effects Rating") +
+  labs(color = "User Rating") +
+  scale_color_viridis_d() + 
+  theme(legend.position = "right",
+        legend.direction = "vertical",
+        plot.title = element_text(size=14)) +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
+  ggtitle("Effectiveness and Side Effects Rating with Overall User Rating")
+```
+
 
