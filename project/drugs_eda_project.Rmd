@@ -248,6 +248,20 @@ df %>%
 The above plot shows that the more effective, the more satisfied the
 subjects were. (TODO more explanation maybe)
 
+```{r}
+df %>%
+  ggplot(aes(effectiveness, fill = factor(sideEffects))) +
+  geom_bar(position = "fill") + 
+  theme(legend.position = "right",
+        legend.direction = "vertical") +
+  guides(fill = guide_legend(title = "Side Effects Rating")) +
+  ylab("Proportion") +
+  xlab("Effectiveness") + 
+  coord_flip() +
+  ggtitle("Perceived Drug Effectiveness and Side Effects") +
+  scale_fill_viridis_d()
+```
+
 
 Show mosaic plot for different patient ratings by drug type
 
