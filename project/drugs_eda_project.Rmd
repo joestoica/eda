@@ -121,7 +121,7 @@ df <- drugs %>%
   # keep people who are depressed
   filter(str_detect(condition, 'epress')) %>% 
   # get rid of unnecessary columns
-  select(-sideEffectsReview, -commentsReview, -X1, -condition) %>% 
+  select(-benefitsReview, -sideEffectsReview, -commentsReview, -X1, -condition) %>% 
   # recode likert to 1-5 scale 
   mutate(effectiveness = case_when(
     effectiveness == "Highly Effective" ~ 5,
@@ -279,7 +279,7 @@ show pie chart of the proportions of different drug types for treating depressio
 
 Set up data frame for mosaic plots
 ```{r}
-x <-  df %>% 
+x <- df %>% 
   filter(type %in% c("SRI", "NRI")) %>% 
   droplevels() %>% 
   select(type, effectiveness, sideEffects, rating) %>%
