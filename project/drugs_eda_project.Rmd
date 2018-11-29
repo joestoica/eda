@@ -243,9 +243,8 @@ df <- df %>%
 ```
 
 
-
 ```{r }
-df %>% 
+side_satis_plot <- df %>% 
   ggplot(aes(factor(sideEffects), fill = factor(rating))) +
   geom_bar(position = "fill") +
   theme(legend.position = "top",
@@ -253,18 +252,33 @@ df %>%
         panel.background = element_blank(),
         plot.background = element_blank(),
         legend.background = element_blank()) +
-  guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
+  guides(fill = FALSE) +
   ylab("Proportion") +
   xlab("Side Effects Ratings") + 
   coord_flip() +
   ggtitle("Drug Side Effects Ratings and Overall Satisfaction")+
   scale_fill_viridis_d()
+# For the report, use the one below
+# df %>% 
+#   ggplot(aes(factor(sideEffects), fill = factor(rating))) +
+#   geom_bar(position = "fill") +
+#   theme(legend.position = "top",
+#         legend.direction = "horizontal",
+#         panel.background = element_blank(),
+#         plot.background = element_blank(),
+#         legend.background = element_blank()) +
+#   guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
+#   ylab("Proportion") +
+#   xlab("Side Effects Ratings") + 
+#   coord_flip() +
+#   ggtitle("Drug Side Effects Ratings and Overall Satisfaction")+
+#   scale_fill_viridis_d()
+
+ggsave(side_satis_plot, filename = "side_satis_plot.png", height = 9, width = 16)
 ```
 
 The above plot shows that the worse the side effects are, the least satisfied the
 subjects were. (TODO more explanation maybe)
-
-
 
 ```{r}
 satis_perc <- df %>% 
@@ -275,7 +289,9 @@ satis_perc <- df %>%
         plot.subtitle = element_text(size = 8, color = "black"),
         panel.background = element_blank(),
         plot.background = element_blank(),
-        legend.background = element_blank()) +
+        legend.background = element_blank(),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(size = 13)) +
   guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
   ylab("Proportion") +
   xlab("Effectiveness") + 
@@ -285,7 +301,7 @@ satis_perc <- df %>%
   scale_fill_viridis_d() +
   ggtitle("Perceived Drug Effectiveness and Overall Satisfaction") 
 
-#ggsave(satis_perc, filename = "satis_perc.png")
+ggsave(satis_perc, filename = "satis_perc.png", height = 9, width = 16)
 ```
 The above plot shows that the more effective, the more satisfied the
 subjects were. (TODO more explanation maybe)
