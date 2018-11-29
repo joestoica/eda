@@ -452,7 +452,11 @@ df %>%
   scale_color_viridis_d() + 
   theme(legend.position = "right",
         legend.direction = "vertical",
-        plot.title = element_text(size=14)) +
+        plot.title = element_text(size=14),
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        axis.text = element_text(size = 16)) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2)),
          reverse = TRUE) +
   ggtitle("Effectiveness and Side Effects Rating with Overall User Rating")
@@ -525,7 +529,11 @@ ordinal.plot <- drugs.polr.long %>%
   scale_y_continuous(sec.axis = sec_axis(~.*1, "Side Effects")) +
   theme(plot.subtitle = element_text(size = 8),
         axis.text.y.right = element_blank(),
-        axis.text.x.top = element_blank()) 
+        axis.text.x.top = element_blank(),
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        axis.text = element_text(size = 12)) 
 #ggsave(ordinal.plot, filename="ordinal_plot.png")
 ```
 
@@ -576,7 +584,11 @@ multi.plot <- m1.long %>%
   scale_y_continuous(sec.axis = sec_axis(~.*1, "Side Effects")) +
   theme(plot.subtitle = element_text(size = 8),
         axis.text.y.right = element_blank(),
-        axis.text.x.top = element_blank()) 
+        axis.text.x.top = element_blank(),
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        axis.text = element_text(size = 12)) 
 
 # m1.long %>% 
 #   mutate(as.factor.effectiveness. = paste0("(E = ", as.factor.effectiveness.),
