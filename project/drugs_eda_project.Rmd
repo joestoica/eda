@@ -17,6 +17,7 @@ library(tidyverse)
 library(lubridate)
 library(ggthemes)
 library(ggmosaic)
+library(VGAM)
 ```
 
 
@@ -247,13 +248,12 @@ df <- df %>%
 df %>% 
   ggplot(aes(factor(sideEffects), fill = factor(rating))) +
   geom_bar(position = "fill") +
-  theme(legend.position = "right",
-        legend.direction = "vertical",
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
         panel.background = element_blank(),
         plot.background = element_blank(),
-        legend.background = element_blank(),
-        axis.text = element_text(size = 16)) +
-  guides(fill = guide_legend(title = "Satisfaction")) +
+        legend.background = element_blank()) +
+  guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
   ylab("Proportion") +
   xlab("Side Effects Ratings") + 
   coord_flip() +
@@ -267,17 +267,16 @@ subjects were. (TODO more explanation maybe)
 
 
 ```{r}
-df %>% 
+satis_perc <- df %>% 
   ggplot(aes(effectiveness, fill = factor(rating))) +
   geom_bar(position = "fill") +
-  theme(legend.position = "right",
-        legend.direction = "vertical",
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
         plot.subtitle = element_text(size = 8, color = "black"),
         panel.background = element_blank(),
         plot.background = element_blank(),
-        legend.background = element_blank(),
-        axis.text = element_text(size = 16)) +
-  guides(fill = guide_legend(title = "Satisfaction")) +
+        legend.background = element_blank()) +
+  guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
   ylab("Proportion") +
   xlab("Effectiveness") + 
   labs(title = "How Drugs Effectiveness Affects Satisfaction",
@@ -285,32 +284,30 @@ df %>%
   coord_flip() + 
   scale_fill_viridis_d() +
   ggtitle("Perceived Drug Effectiveness and Overall Satisfaction") 
+
+#ggsave(satis_perc, filename = "satis_perc.png")
 ```
 The above plot shows that the more effective, the more satisfied the
 subjects were. (TODO more explanation maybe)
 
 ```{r}
-df %>%
+side_effects_perc <- df %>%
   ggplot(aes(effectiveness, fill = factor(sideEffects))) +
   geom_bar(position = "fill") + 
-  theme(legend.position = "right",
-        legend.direction = "vertical",
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
         panel.background = element_blank(),
         plot.background = element_blank(),
         legend.background = element_blank()) +
-  guides(fill = guide_legend(title = "Side Effects Rating")) +
+  guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
   ylab("Proportion") +
   xlab("Effectiveness") + 
   coord_flip() +
   ggtitle("Perceived Drug Effectiveness and Side Effects") +
   scale_fill_viridis_d()
+
+#ggsave(side_effects_perc, filename = "side_effects_perc.png")
 ```
-
-
-Show mosaic plot for different patient ratings by drug type
-
-show pie chart of the proportions of different drug types for treating depression-related disability
-
 
 ### State answers to your questions;
 
@@ -442,9 +439,8 @@ temp %>%
   xlab("Drug Brand Name") + 
   #ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
   theme(plot.title = element_text(size = 14),
-        panel.grid.major.y = element_blank()) 3+
+        panel.grid.major.y = element_blank()) 
   #theme_light(base_size = 16)
-
 
 ```
 
@@ -457,13 +453,39 @@ drugs_polr2 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(
 drugs_polr2 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df)
 
 drugs_polr3 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df)
-
-drugs_polr
-drugs_polr2
-drugs_polr3
 ```
 
 I created three models all trying to predict rating. They all have side effects and effectiveness. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest Akaike information criterion (AIC). "[It] is an estimator of the relative quality of statistical models for a given set of data. Given a collection of models for the data, AIC estimates the quality of each model, relative to each of the other models. Thus, AIC provides a means for model selection.(stolen from wikipedia (https://en.wikipedia.org/wiki/Akaike_information_criterion)". So even though it doesnt have the lowest residual deviance, it is still the best model to use. Adding the sentiment analysis might improve it, however. 
+
+```{r}
+drugs.polr.df <- data.frame(model.frame(drugs_polr), fitted.values(drugs_polr))
+
+drugs.polr.long <- drugs.polr.df %>% gather(factor.rating., probability, X1:X10) %>% 
+  mutate(factor.rating. = substring(factor.rating., 2))
+
+drugs.polr.long$factor.rating. <- factor(drugs.polr.long$factor.rating.,
+                                 levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
+
+drugs.polr.long$as.factor.sideEffects.f <- factor(drugs.polr.long$as.factor.sideEffects., 
+                                          levels = c("5","4","3","2","1"))
+
+ordinal.plot <- drugs.polr.long %>%
+  ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
+  geom_line() +
+  geom_point() + 
+  facet_grid(as.factor.sideEffects.f ~ as.factor.effectiveness.) +
+  xlab("Overall Satisfaction Rating") + ylab("Probability") + 
+  labs(title = "Ordinal Logistic Model Probabilities")+
+  guides(color = guides(col=FALSE)) + 
+  scale_colour_viridis_d() +
+  scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Effectiveness")) + 
+  scale_y_continuous(sec.axis = sec_axis(~.*1, "Side Effects")) +
+  theme(plot.subtitle = element_text(size = 8),
+        axis.text.y.right = element_blank(),
+        axis.text.x.top = element_blank()) 
+#ggsave(ordinal.plot, filename="ordinal_plot.png")
+```
+
 
 ```{r}
 recode = function(x) {
@@ -481,10 +503,6 @@ for(i in 1:nrow(df2)) {
   #df2$effectiveness[i] = recode(df2$effectiveness[i])
   df2$sideEffects[i] = recode(df2$sideEffects[i])
 }
-
-
-#install.packages('VGAM')
-library(VGAM)
 ```
 
 Multinomial Logit Model #1 (2 predictors): SatisfactionRating ~ Effectiveness + SideEffects
@@ -492,22 +510,23 @@ Multinomial Logit Model #1 (2 predictors): SatisfactionRating ~ Effectiveness + 
 m1 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
 
 m1.df <- data.frame(model.frame(m1), fitted.values(m1))
+
 m1.long <- m1.df %>% gather(factor.rating., probability, X1:X10) %>% 
   mutate(factor.rating. = substring(factor.rating., 2))
 
-m1.long$factor.rating. <- factor(m1.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
-))
+m1.long$factor.rating. <- factor(m1.long$factor.rating., 
+                                 levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
 
-m1.long$as.factor.sideEffects.f <- factor(m1.long$as.factor.sideEffects., levels = c("5","4","3","2","1"))
+m1.long$as.factor.sideEffects.f <- factor(m1.long$as.factor.sideEffects., 
+                                          levels = c("5","4","3","2","1"))
 
-m1.long %>%
-  #mutate(as.factor.effectiveness. = paste0("Effectiveness = ", as.factor.effectiveness.)) %>%
+multi.plot <- m1.long %>%
   ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
   geom_line() +
   geom_point() + 
   facet_grid(as.factor.sideEffects.f ~ as.factor.effectiveness.) +
   xlab("Overall Satisfaction Rating") + ylab("Probability") + 
-  labs(title = "Multinomial Logit Model Probabilities")+
+  labs(title = "Multinomial Logistic Model Probabilities")+
   guides(color = guides(col=FALSE)) + 
   scale_colour_viridis_d() +
   scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Effectiveness")) + 
@@ -526,70 +545,71 @@ m1.long %>%
 #   facet_wrap(. ~ unite) +
 #   xlab("Rating") +
 #   ylab("Probability")
+
+# ggsave(multi.plot, filename="multiplot.png")
 ```
 
 Multinomial Logit Model #2 (3 Predictors): SatisfactionRating ~ Effectiveness + SideEffects + DrugType
 ```{r}
-m2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df, family = "multinomial")
-
-m2.df <- data.frame(model.frame(m2), fitted.values(m2))
-m2.long <- m2.df %>% gather(factor.rating., probability, X1:X10) %>% 
-  mutate(factor.rating. = substring(factor.rating., 2))
-
-m2.long$factor.rating. <- factor(m2.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
-))
-
-m2.long %>%
-  mutate(as.factor.effectiveness. = paste0("(E = ", as.factor.effectiveness.),
-         as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
-  unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>%
-  ggplot(aes(x = factor.rating., y = probability, col = as.factor.type.)) +
-  geom_point() +
-  facet_wrap(. ~ unite) +
-  theme(legend.position = "right",
-        legend.direction = "vertical") +
-  xlab("Overall Satisfaction Rating") + 
-  ylab("Probability") +
-  guides(color = guide_legend("Drug Type"))
-
+# m2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df, family = "multinomial")
+# 
+# m2.df <- data.frame(model.frame(m2), fitted.values(m2))
+# m2.long <- m2.df %>% gather(factor.rating., probability, X1:X10) %>% 
+#   mutate(factor.rating. = substring(factor.rating., 2))
+# 
+# m2.long$factor.rating. <- factor(m2.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
+# ))
+# 
+# m2.long %>%
+#   mutate(as.factor.effectiveness. = paste0("(E = ", as.factor.effectiveness.),
+#          as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
+#   unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>%
+#   ggplot(aes(x = factor.rating., y = probability, col = as.factor.type.)) +
+#   geom_point() +
+#   facet_wrap(. ~ unite) +
+#   theme(legend.position = "right",
+#         legend.direction = "vertical") +
+#   xlab("Overall Satisfaction Rating") + 
+#   ylab("Probability") +
+#   guides(color = guide_legend("Drug Type"))
 ```
 
 Multinomial Logit Model #3 (3 Predictors): SatisfactionRating ~ Effectiveness + SideEffects + DrugBrand
 ```{r}
-m3 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df, family = "multinomial")
+#m3 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df, family = "multinomial")
 ```
 
 
 Plot multinomial model fits with fewer category levels
 ```{r}
-m.df2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df2, family = "multinomial")
-
-m.df2 <- data.frame(model.frame(m.df2), fitted.values(m.df2))
-m.df2.long <- m.df2 %>% gather(factor.rating., probability, X1:X10) %>%
-  mutate(factor.rating. = substring(factor.rating., 2))
-
-m.df2.long$factor.rating. <- factor(m.df2.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
-))
-
-levels(m.df2.long$as.factor.effectiveness.) <- c("Ineffective","Marginally \nEffective","Moderately \nEffective","Considerably \nEffective","Highly Effective")
-
-m.df2.long %>% 
-  #mutate(as.factor.effectiveness. = paste0(as.factor.effectiveness.)) %>%
-         #as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
-  #unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>% 
-  ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.)) + 
-  geom_point() + 
-  geom_line() +
-  facet_grid(as.factor.sideEffects.~ as.factor.effectiveness.) +
-  xlab("Overall Satisfaction Rating") +
-  ylab("Probability") + 
-  theme()+
-  guides(color = FALSE) + 
-  scale_color_viridis_d() +
-  scale_x_continuous(breaks = seq(0,10,2))
+# m.df2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df2, family = "multinomial")
+# 
+# summary(m.df2)
+# 
+# m.df2 <- data.frame(model.frame(m.df2), fitted.values(m.df2))
+# m.df2.long <- m.df2 %>% gather(factor.rating., probability, X1:X10) %>%
+#   mutate(factor.rating. = substring(factor.rating., 2))
+# 
+# m.df2.long$factor.rating. <- factor(m.df2.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
+# ))
+# 
+# levels(m.df2.long$as.factor.effectiveness.) <- c("Ineffective","Marginally \nEffective","Moderately \nEffective","Considerably \nEffective","Highly Effective")
+# 
+# m.df2.long %>% 
+#   #mutate(as.factor.effectiveness. = paste0(as.factor.effectiveness.)) %>%
+#   #as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
+#   #unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>% 
+#   ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.)) + 
+#   geom_point() + 
+#   geom_line() +
+#   facet_grid(as.factor.sideEffects.~ as.factor.effectiveness.) +
+#   xlab("Overall Satisfaction Rating") +
+#   ylab("Probability") + 
+#   theme()+
+#   guides(color = FALSE) + 
+#   scale_color_viridis_d() +
+#   scale_x_continuous(breaks = seq(0,10,2))
 ```
 
 Multinomial logit model 1 and 2 not very different based on AIC (1380.239 vs 1383.26 respectively), whereas model 3 has lowest deviance but considerably higher AIC (1879.28). Could go with m1, since it has lowest AIC.
-
-
 

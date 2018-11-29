@@ -10,3 +10,6 @@ stringr
 forcats
 lubridate
 ggthemes
+ggmosaic
+bindrcpp
+VGAM
