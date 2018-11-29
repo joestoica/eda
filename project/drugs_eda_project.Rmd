@@ -494,14 +494,23 @@ m1.long <- m1.df %>% gather(factor.rating., probability, X1:X10) %>%
 m1.long$factor.rating. <- factor(m1.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
 ))
 
+m1.long$as.factor.sideEffects.f <- factor(m1.long$as.factor.sideEffects., levels = c("5","4","3","2","1"))
+
 m1.long %>%
-  mutate(as.factor.effectiveness. = paste0("Effectiveness = ", as.factor.effectiveness.)) %>%
-  ggplot(aes(factor.rating., probability, col = as.factor.sideEffects.)) +
-  geom_point() +
-  facet_wrap(~ as.factor.effectiveness.) +
-  xlab("Overall Satisfaction Rating") + ylab("Probability") +
-  theme_bw() +
-  theme(legend.position = "right")
+  #mutate(as.factor.effectiveness. = paste0("Effectiveness = ", as.factor.effectiveness.)) %>%
+  ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
+  geom_line() +
+  geom_point() + 
+  facet_grid(as.factor.sideEffects.f ~ as.factor.effectiveness.) +
+  xlab("Overall Satisfaction Rating") + ylab("Probability") + 
+  labs(title = "Multinomial Logit Model Probabilities")+
+  guides(color = guides(col=FALSE)) + 
+  scale_colour_viridis_d() +
+  scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Effectiveness")) + 
+  scale_y_continuous(sec.axis = sec_axis(~.*1, "Side Effects")) +
+  theme(plot.subtitle = element_text(size = 8),
+        axis.text.y.right = element_blank(),
+        axis.text.x.top = element_blank()) 
 
 # m1.long %>% 
 #   mutate(as.factor.effectiveness. = paste0("(E = ", as.factor.effectiveness.),
@@ -531,11 +540,13 @@ m2.long %>%
          as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
   unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>%
   ggplot(aes(x = factor.rating., y = probability, col = as.factor.type.)) +
-  geom_point() + facet_wrap(. ~ unite) +
-  theme_bw() +
-  theme(legend.position = "right") +
+  geom_point() +
+  facet_wrap(. ~ unite) +
+  theme(legend.position = "right",
+        legend.direction = "vertical") +
   xlab("Overall Satisfaction Rating") + 
-  ylab("Probability")
+  ylab("Probability") +
+  guides(color = guide_legend("Drug Type"))
 
 ```
 
@@ -556,19 +567,22 @@ m.df2.long <- m.df2 %>% gather(factor.rating., probability, X1:X10) %>%
 m.df2.long$factor.rating. <- factor(m.df2.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
 ))
 
-levels(m.df2.long$as.factor.effectiveness.) <- c("Ineffective","Marginally Effective","Moderately Effective","Considerably Effective","Highly Effective")
+levels(m.df2.long$as.factor.effectiveness.) <- c("Ineffective","Marginally \nEffective","Moderately \nEffective","Considerably \nEffective","Highly Effective")
 
 m.df2.long %>% 
-  mutate(as.factor.effectiveness. = paste0(as.factor.effectiveness.)) %>%
+  #mutate(as.factor.effectiveness. = paste0(as.factor.effectiveness.)) %>%
          #as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
   #unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>% 
-  ggplot(aes(factor.rating., probability, col = as.factor.sideEffects.)) + 
+  ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.)) + 
   geom_point() + 
-  theme_bw() +
-  geom_line() + 
-  facet_wrap(~ as.factor.effectiveness.) +
+  geom_line() +
+  facet_grid(as.factor.sideEffects.~ as.factor.effectiveness.) +
   xlab("Overall Satisfaction Rating") +
-  ylab("Probability")
+  ylab("Probability") + 
+  theme()+
+  guides(color = FALSE) + 
+  scale_color_viridis_d() +
+  scale_x_continuous(breaks = seq(0,10,2))
 ```
 
 Multinomial logit model 1 and 2 not very different based on AIC (1380.239 vs 1383.26 respectively), whereas model 3 has lowest deviance but considerably higher AIC (1879.28). Could go with m1, since it has lowest AIC.
