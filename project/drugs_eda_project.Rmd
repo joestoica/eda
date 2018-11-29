@@ -429,10 +429,26 @@ drugs_polr3
 I created three models all trying to predict rating. They all have side effects and effectiveness. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest Akaike information criterion (AIC). "[It] is an estimator of the relative quality of statistical models for a given set of data. Given a collection of models for the data, AIC estimates the quality of each model, relative to each of the other models. Thus, AIC provides a means for model selection.(stolen from wikipedia (https://en.wikipedia.org/wiki/Akaike_information_criterion)". So even though it doesnt have the lowest residual deviance, it is still the best model to use. Adding the sentiment analysis might improve it, however. 
 
 ```{r}
+recode = function(x) {
+  if(x < 3) {
+    return("Poor")
+  } else if(x == 3 | x == 4) {
+    return("Fair")
+  } else {
+    return("Excellent")
+  }
+}
+
+df2 <- df
+for(i in 1:nrow(df2)) {
+  df2$effectiveness[i] = recode(df2$effectiveness[i])
+  df2$sideEffects[i] = recode(df2$sideEffects[i])
+}
+
 #install.packages('VGAM')
 library(VGAM)
 
-m1 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
+m1 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df2, family = "multinomial")
 
 m1.df <- data.frame(model.frame(m1), fitted.values(m1))
 m1.long <- m1.df %>% gather(factor.rating., probability, X1:X10) %>% 
@@ -451,6 +467,8 @@ m1.long %>%
   facet_wrap(. ~ unite) +
   xlab("Rating") +
   ylab("Probability")
+
+# Plot multinomial model fits collapsing across side effects levels
 
 # m2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df, family = "multinomial")
 # 
