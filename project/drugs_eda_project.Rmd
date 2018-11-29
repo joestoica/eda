@@ -429,19 +429,34 @@ drugs_polr3
 I created three models all trying to predict rating. They all have side effects and effectiveness. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest Akaike information criterion (AIC). "[It] is an estimator of the relative quality of statistical models for a given set of data. Given a collection of models for the data, AIC estimates the quality of each model, relative to each of the other models. Thus, AIC provides a means for model selection.(stolen from wikipedia (https://en.wikipedia.org/wiki/Akaike_information_criterion)". So even though it doesnt have the lowest residual deviance, it is still the best model to use. Adding the sentiment analysis might improve it, however. 
 
 ```{r}
-install.packages('VGAM')
+#install.packages('VGAM')
 library(VGAM)
 
 m1 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
+
 m1.df <- data.frame(model.frame(m1), fitted.values(m1))
-m1.long <- m1.df %>% gather(factor.rating., probability, X1:X10)
-ggplot(m1.long, aes(x = factor.rating., y = probability)) + geom_point() + facet_wrap(~as.factor.effectiveness. + as.factor.sideEffects.)
+m1.long <- m1.df %>% gather(factor.rating., probability, X1:X10) %>% 
+  mutate(factor.rating. = substring(factor.rating., 2))
 
-m2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df, family = "multinomial")
+m1.long$factor.rating. <- factor(m1.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
+))
 
-m3 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df, family = "multinomial")
+m1.long %>% 
+  mutate(as.factor.effectiveness. = paste0("(E = ", as.factor.effectiveness.),
+         as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
+  unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>% 
+  ggplot(aes(factor.rating., probability)) + 
+  geom_point() + 
+  geom_line() + 
+  facet_wrap(. ~ unite) +
+  xlab("Rating") +
+  ylab("Probability")
 
-deviance(m3)
+# m2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df, family = "multinomial")
+# 
+# m3 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df, family = "multinomial")
+
+#deviance(m3)
 ```
 
 Using multinomial logit model 3 might be better cause of lowest deviance
