@@ -441,13 +441,17 @@ recode = function(x) {
 
 df2 <- df
 for(i in 1:nrow(df2)) {
-  df2$effectiveness[i] = recode(df2$effectiveness[i])
+  #df2$effectiveness[i] = recode(df2$effectiveness[i])
   df2$sideEffects[i] = recode(df2$sideEffects[i])
 }
 
+
 #install.packages('VGAM')
 library(VGAM)
+```
 
+Multinomial Logit Model #1 (2 predictors): SatisfactionRating ~ Effectiveness + SideEffects
+```{r}
 m1 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
 
 m1.df <- data.frame(model.frame(m1), fitted.values(m1))
@@ -457,47 +461,84 @@ m1.long <- m1.df %>% gather(factor.rating., probability, X1:X10) %>%
 m1.long$factor.rating. <- factor(m1.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
 ))
 
-m1.long %>% 
-  mutate(as.factor.effectiveness. = paste0("(E = ", as.factor.effectiveness.),
-         as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
-  unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>% 
-  ggplot(aes(factor.rating., probability)) + 
-  geom_point() + 
-  geom_line() + 
-  facet_wrap(. ~ unite) +
-  xlab("Rating") +
-  ylab("Probability")
+m1.long %>%
+  mutate(as.factor.effectiveness. = paste0("Effectiveness = ", as.factor.effectiveness.)) %>%
+  ggplot(aes(factor.rating., probability, col = as.factor.sideEffects.)) +
+  geom_point() +
+  facet_wrap(~ as.factor.effectiveness.) +
+  xlab("Overall Satisfaction Rating") + ylab("Probability") +
+  theme_bw() +
+  theme(legend.position = "right")
 
-# Plot multinomial model fits with fewer category levels
-m1.df2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df2, family = "multinomial")
+# m1.long %>% 
+#   mutate(as.factor.effectiveness. = paste0("(E = ", as.factor.effectiveness.),
+#          as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
+#   unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>% 
+#   ggplot(aes(factor.rating., probability)) + 
+#   geom_point() + 
+#   geom_line() + 
+#   facet_wrap(. ~ unite) +
+#   xlab("Rating") +
+#   ylab("Probability")
+```
 
-m1.df2 <- data.frame(model.frame(m1.df2), fitted.values(m1.df2))
-m1.df2.long <- m1.df2 %>% gather(factor.rating., probability, X1:X10) %>%
+Multinomial Logit Model #2 (3 Predictors): SatisfactionRating ~ Effectiveness + SideEffects + DrugType
+```{r}
+m2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df, family = "multinomial")
+
+m2.df <- data.frame(model.frame(m2), fitted.values(m2))
+m2.long <- m2.df %>% gather(factor.rating., probability, X1:X10) %>% 
   mutate(factor.rating. = substring(factor.rating., 2))
 
-m1.df2.long$factor.rating. <- factor(m1.df2.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
+m2.long$factor.rating. <- factor(m2.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
 ))
 
-m1.df2.long %>% 
+m2.long %>%
   mutate(as.factor.effectiveness. = paste0("(E = ", as.factor.effectiveness.),
          as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
-  unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>% 
-  ggplot(aes(factor.rating., probability)) + 
+  unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>%
+  ggplot(aes(x = factor.rating., y = probability, col = as.factor.type.)) +
+  geom_point() + facet_wrap(. ~ unite) +
+  theme_bw() +
+  theme(legend.position = "right") +
+  xlab("Overall Satisfaction Rating") + 
+  ylab("Probability")
+
+```
+
+Multinomial Logit Model #3 (3 Predictors): SatisfactionRating ~ Effectiveness + SideEffects + DrugBrand
+```{r}
+m3 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df, family = "multinomial")
+```
+
+
+Plot multinomial model fits with fewer category levels
+```{r}
+m.df2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df2, family = "multinomial")
+
+m.df2 <- data.frame(model.frame(m.df2), fitted.values(m.df2))
+m.df2.long <- m.df2 %>% gather(factor.rating., probability, X1:X10) %>%
+  mutate(factor.rating. = substring(factor.rating., 2))
+
+m.df2.long$factor.rating. <- factor(m.df2.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
+))
+
+levels(m.df2.long$as.factor.effectiveness.) <- c("Ineffective","Marginally Effective","Moderately Effective","Considerably Effective","Highly Effective")
+
+m.df2.long %>% 
+  mutate(as.factor.effectiveness. = paste0(as.factor.effectiveness.)) %>%
+         #as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
+  #unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>% 
+  ggplot(aes(factor.rating., probability, col = as.factor.sideEffects.)) + 
   geom_point() + 
   theme_bw() +
   geom_line() + 
-  facet_wrap(. ~ unite) +
+  facet_wrap(~ as.factor.effectiveness.) +
   xlab("Overall Satisfaction Rating") +
   ylab("Probability")
-
-# m2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df, family = "multinomial")
-# 
-# m3 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df, family = "multinomial")
-
-#deviance(m3)
 ```
 
-Using multinomial logit model 3 might be better cause of lowest deviance
+Multinomial logit model 1 and 2 not very different based on AIC (1380.239 vs 1383.26 respectively), whereas model 3 has lowest deviance but considerably higher AIC (1879.28). Could go with m1, since it has lowest AIC.
 
 
 
