@@ -248,7 +248,11 @@ df %>%
   ggplot(aes(factor(sideEffects), fill = factor(rating))) +
   geom_bar(position = "fill") +
   theme(legend.position = "right",
-        legend.direction = "vertical") +
+        legend.direction = "vertical",
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        axis.text = element_text(size = 16)) +
   guides(fill = guide_legend(title = "Satisfaction")) +
   ylab("Proportion") +
   xlab("Side Effects Ratings") + 
@@ -268,7 +272,11 @@ df %>%
   geom_bar(position = "fill") +
   theme(legend.position = "right",
         legend.direction = "vertical",
-        plot.subtitle = element_text(size = 8, color = "black")) +
+        plot.subtitle = element_text(size = 8, color = "black"),
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        axis.text = element_text(size = 16)) +
   guides(fill = guide_legend(title = "Satisfaction")) +
   ylab("Proportion") +
   xlab("Effectiveness") + 
@@ -286,7 +294,11 @@ df %>%
   ggplot(aes(effectiveness, fill = factor(sideEffects))) +
   geom_bar(position = "fill") + 
   theme(legend.position = "right",
-        legend.direction = "vertical") +
+        legend.direction = "vertical",
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        axis.text = element_text(size = 16)) +
   guides(fill = guide_legend(title = "Side Effects Rating")) +
   ylab("Proportion") +
   xlab("Effectiveness") + 
@@ -339,8 +351,12 @@ x %>%
         axis.text.y = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        plot.title = element_text(size = 14)) +
-  ggtitle("How does Overall User Satsifaction Change Across Drug Types?")
+        plot.title = element_text(size = 14),
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        axis.text = element_text(size = 16)) +
+  ggtitle("Overall Satsifaction By Drug Type")
 ```
 
 Mosaic plot of user ratings of drug effectiveness and side effects by drug type (SRI vs NRIs)
@@ -364,8 +380,22 @@ x %>%
         legend.direction = "vertical",
         axis.text.y = element_blank(),
         panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()) + 
-  ggtitle("How do User Ratings Differ Across Drug Types?")
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        axis.text = element_text(size = 16)) + 
+  ggtitle("Ratings of Effectiveness & Side Effects Across Drug Types")
+
+df %>%
+  group_by(type) %>%
+  count() %>%
+  ggplot(aes(as.factor(type),n)) + 
+  geom_bar(stat = "identity") +
+  theme_light(base_size = 20) +
+  theme(panel.grid.minor.y = element_blank()) +
+  ylab("Count") +
+  xlab("Drug Classification") 
 ```
 
 ```{r scatter plot}
@@ -405,10 +435,13 @@ temp %>%
   coord_flip() + 
   facet_wrap(.~type, scales = "free") +
   ylab("Count") +
-  xlab("Drug") + 
-  ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
+  xlab("Drug Brand Name") + 
+  #ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
   theme(plot.title = element_text(size = 14),
-        panel.grid.major.y = element_blank())
+        panel.grid.major.y = element_blank()) +
+  theme_light(base_size = 16)
+
+
 ```
 
 
