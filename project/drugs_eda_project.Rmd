@@ -448,7 +448,7 @@ for(i in 1:nrow(df2)) {
 #install.packages('VGAM')
 library(VGAM)
 
-m1 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df2, family = "multinomial")
+m1 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
 
 m1.df <- data.frame(model.frame(m1), fitted.values(m1))
 m1.long <- m1.df %>% gather(factor.rating., probability, X1:X10) %>% 
@@ -468,7 +468,27 @@ m1.long %>%
   xlab("Rating") +
   ylab("Probability")
 
-# Plot multinomial model fits collapsing across side effects levels
+# Plot multinomial model fits with fewer category levels
+m1.df2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df2, family = "multinomial")
+
+m1.df2 <- data.frame(model.frame(m1.df2), fitted.values(m1.df2))
+m1.df2.long <- m1.df2 %>% gather(factor.rating., probability, X1:X10) %>%
+  mutate(factor.rating. = substring(factor.rating., 2))
+
+m1.df2.long$factor.rating. <- factor(m1.df2.long$factor.rating., levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
+))
+
+m1.df2.long %>% 
+  mutate(as.factor.effectiveness. = paste0("(E = ", as.factor.effectiveness.),
+         as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
+  unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>% 
+  ggplot(aes(factor.rating., probability)) + 
+  geom_point() + 
+  theme_bw() +
+  geom_line() + 
+  facet_wrap(. ~ unite) +
+  xlab("Overall Satisfaction Rating") +
+  ylab("Probability")
 
 # m2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df, family = "multinomial")
 # 
