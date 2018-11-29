@@ -297,8 +297,7 @@ df %>%
         legend.direction = "vertical",
         panel.background = element_blank(),
         plot.background = element_blank(),
-        legend.background = element_blank(),
-        axis.text = element_text(size = 16)) +
+        legend.background = element_blank()) +
   guides(fill = guide_legend(title = "Side Effects Rating")) +
   ylab("Proportion") +
   xlab("Effectiveness") + 
@@ -384,16 +383,19 @@ x %>%
         panel.background = element_blank(),
         plot.background = element_blank(),
         legend.background = element_blank(),
-        axis.text = element_text(size = 16)) + 
+        axis.text = element_text(size = 16),
+        strip.background = element_blank()) + 
   ggtitle("Ratings of Effectiveness & Side Effects Across Drug Types")
+```
 
+```{r}
 df %>%
   group_by(type) %>%
   count() %>%
   ggplot(aes(as.factor(type),n)) + 
   geom_bar(stat = "identity") +
-  theme_light(base_size = 20) +
-  theme(panel.grid.minor.y = element_blank()) +
+  #theme_light(base_size = 20) +
+  theme(panel.grid.major.x = element_blank()) +
   ylab("Count") +
   xlab("Drug Classification") 
 ```
@@ -411,7 +413,8 @@ df %>%
   theme(legend.position = "right",
         legend.direction = "vertical",
         plot.title = element_text(size=14)) +
-  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2)),
+         reverse = TRUE) +
   ggtitle("Effectiveness and Side Effects Rating with Overall User Rating")
 ```
 
@@ -422,6 +425,7 @@ temp <- df %>%
   group_by(drug, type) %>% 
   count() %>% 
   ungroup()
+
 # vec <- temp %>% 
 #   arrange(n) %>% 
 #   select(drug)
@@ -438,8 +442,8 @@ temp %>%
   xlab("Drug Brand Name") + 
   #ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
   theme(plot.title = element_text(size = 14),
-        panel.grid.major.y = element_blank()) +
-  theme_light(base_size = 16)
+        panel.grid.major.y = element_blank()) 3+
+  #theme_light(base_size = 16)
 
 
 ```
