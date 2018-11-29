@@ -244,6 +244,8 @@ df <- df %>%
 
 
 ```{r }
+letter_size = 14
+
 side_satis_plot <- df %>% 
   ggplot(aes(factor(sideEffects), fill = factor(rating))) +
   geom_bar(position = "fill") +
@@ -252,8 +254,8 @@ side_satis_plot <- df %>%
         panel.background = element_blank(),
         plot.background = element_blank(),
         legend.background = element_blank(),
-        axis.text = element_text(size = 13),
-        axis.title = element_text(size = 13)) +
+        axis.text = element_text(size = letter_size),
+        axis.title = element_blank()) +
   guides(fill = FALSE) +
   ylab("Proportion") +
   xlab("Side Effects Ratings") + 
@@ -293,8 +295,8 @@ satis_perc <- df %>%
         panel.background = element_blank(),
         plot.background = element_blank(),
         legend.background = element_blank(),
-        axis.text = element_text(size = 13),
-        axis.title = element_text(size = 13)) +
+        axis.text = element_text(size = letter_size),
+        axis.title = element_blank()) +
   guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
   ylab("Proportion") +
   xlab("Effectiveness") + 
@@ -303,6 +305,26 @@ satis_perc <- df %>%
   coord_flip() + 
   scale_fill_viridis_d() +
   ggtitle("Perceived Drug Effectiveness and Overall Satisfaction") 
+
+# satis_perc <- df %>% 
+#   ggplot(aes(effectiveness, fill = factor(rating))) +
+#   geom_bar(position = "fill") +
+#   theme(legend.position = "top",
+#         legend.direction = "horizontal",
+#         plot.subtitle = element_text(size = 8, color = "black"),
+#         panel.background = element_blank(),
+#         plot.background = element_blank(),
+#         legend.background = element_blank(),
+#         axis.text = element_text(size = letter_size),
+#         axis.title = element_text(size = letter_size)) +
+#   guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
+#   ylab("Proportion") +
+#   xlab("Effectiveness") + 
+#   labs(title = "How Drugs Effectiveness Affects Satisfaction",
+#        subtitle = "1 - Ineffective, 2 - Marginally Effective, 3 - Moderately Effective, 4 - Considerably Effective, 5 - Highly Effective") +
+#   coord_flip() + 
+#   scale_fill_viridis_d() +
+#   ggtitle("Perceived Drug Effectiveness and Overall Satisfaction")
 
 ggsave(satis_perc, filename = "satis_perc.png", height = 9, width = 16)
 ```
@@ -318,8 +340,8 @@ side_effects_perc <- df %>%
         panel.background = element_blank(),
         plot.background = element_blank(),
         legend.background = element_blank(),
-        axis.text = element_text(size = 13),
-        axis.title = element_text(size = 13)) +
+        axis.text = element_text(size = letter_size),
+        axis.title = element_text(size = letter_size)) +
   guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
   ylab("Proportion") +
   xlab("Effectiveness") + 
