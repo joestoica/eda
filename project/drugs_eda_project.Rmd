@@ -251,13 +251,16 @@ side_satis_plot <- df %>%
         legend.direction = "horizontal",
         panel.background = element_blank(),
         plot.background = element_blank(),
-        legend.background = element_blank()) +
+        legend.background = element_blank(),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(size = 13)) +
   guides(fill = FALSE) +
   ylab("Proportion") +
   xlab("Side Effects Ratings") + 
   coord_flip() +
   ggtitle("Drug Side Effects Ratings and Overall Satisfaction")+
   scale_fill_viridis_d()
+
 # For the report, use the one below
 # df %>% 
 #   ggplot(aes(factor(sideEffects), fill = factor(rating))) +
@@ -314,7 +317,9 @@ side_effects_perc <- df %>%
         legend.direction = "horizontal",
         panel.background = element_blank(),
         plot.background = element_blank(),
-        legend.background = element_blank()) +
+        legend.background = element_blank(),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(size = 13)) +
   guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
   ylab("Proportion") +
   xlab("Effectiveness") + 
@@ -322,7 +327,7 @@ side_effects_perc <- df %>%
   ggtitle("Perceived Drug Effectiveness and Side Effects") +
   scale_fill_viridis_d()
 
-#ggsave(side_effects_perc, filename = "side_effects_perc.png")
+ggsave(side_effects_perc, filename = "side_effects_perc.png")
 ```
 
 ### State answers to your questions;
