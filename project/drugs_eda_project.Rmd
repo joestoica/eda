@@ -494,7 +494,12 @@ temp %>%
 
 ```{r model creation}
 df <- df %>% as.tibble()
+drugs_polr_se <- MASS::polr(factor(rating) ~ as.factor(sideEffects), data = df)
+drugs_polr_eff <- MASS::polr(factor(rating) ~ as.factor(effectiveness), data = df)
 drugs_polr <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df)
+
+drugs_polr4 <- MASS::polr(factor(effectiveness) ~ as.factor(sideEffects), data = df)
+
 drugs_polr2 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df)
 
 drugs_polr2 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df)
@@ -503,6 +508,36 @@ drugs_polr3 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(
 ```
 
 I created three models all trying to predict rating. They all have side effects and effectiveness. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest Akaike information criterion (AIC). "[It] is an estimator of the relative quality of statistical models for a given set of data. Given a collection of models for the data, AIC estimates the quality of each model, relative to each of the other models. Thus, AIC provides a means for model selection.(stolen from wikipedia (https://en.wikipedia.org/wiki/Akaike_information_criterion)". So even though it doesnt have the lowest residual deviance, it is still the best model to use. Adding the sentiment analysis might improve it, however. 
+
+Show polr plot with only single predictor using Side Effects to predict Overall Satisfaction
+```{r}
+polr.se.df <- data.frame(model.frame(drugs_polr_se), fitted.values(drugs_polr_se))
+polr.se.long <- polr.se.df %>% gather(factor.rating., probability, X1:X10) %>%
+  mutate(factor.rating. = substring(factor.rating., 2))
+polr.se.long$factor.rating. <- factor(polr.se.long$factor.rating.,
+                                      levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
+polr.se.long$as.factor.sideEffects.f <- factor(polr.se.long$as.factor.sideEffects.,
+                                               levels = c("5","4","3","2","1"))
+polr.se.plot <- polr.se.long %>%
+  ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
+  geom_line() +
+  geom_point() + 
+  facet_grid(~ as.factor.sideEffects.f) +
+  xlab("Overall Satisfaction Rating") + ylab("Probability") + 
+  labs(title = "Ordinal Logistic Model Probabilities")+
+  guides(color = guides(col=FALSE)) + 
+  scale_colour_viridis_d() +
+  scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Side Effects")) + 
+  scale_y_continuous() +
+  theme(plot.subtitle = element_text(size = 8),
+        axis.text.y.right = element_blank(),
+        axis.text.x.top = element_blank(),
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        axis.text = element_text(size = 12)) 
+```
+
 
 ```{r}
 drugs.polr.df <- data.frame(model.frame(drugs_polr), fitted.values(drugs_polr))
@@ -535,6 +570,36 @@ ordinal.plot <- drugs.polr.long %>%
         legend.background = element_blank(),
         axis.text = element_text(size = 12)) 
 #ggsave(ordinal.plot, filename="ordinal_plot.png")
+```
+
+Show polr plot predicting effectiveness using side effects as predictor; how strongly do side effects predict perceived drug effectiveness?
+```{r}
+polr4.df <- data.frame(model.frame(drugs_polr4), fitted.values(drugs_polr4))
+polr4.long <- polr4.df %>% gather(factor.effectiveness., probability, X1:X5) %>% 
+  mutate(factor.effectiveness. = substring(factor.effectiveness., 2))
+polr4.long$factor.effectiveness. <- factor(polr4.long$factor.effectiveness.,
+                                 levels = c("1", "2", "3", "4", "5"))
+polr4.long$as.factor.sideEffects. <- factor(polr4.long$as.factor.sideEffects., 
+                                          levels = c("5","4","3","2","1"))
+
+polr4.plot <- polr4.long %>%
+  ggplot(aes(as.numeric(factor.effectiveness.), probability, col = as.factor.sideEffects.)) +
+  geom_line() +
+  geom_point() + 
+  facet_grid(~ as.factor.sideEffects.) +
+  xlab("Perceived Effectiveness") + ylab("Probability") + 
+  labs(title = "Ordinal Logistic Model Probabilities")+
+  guides(color = guides(col=FALSE)) + 
+  scale_colour_viridis_d() +
+  scale_x_continuous(breaks = seq(1,5,1), sec.axis = sec_axis(~.*1, "Side Effects")) + 
+  scale_y_continuous() +
+  theme(plot.subtitle = element_text(size = 8),
+        axis.text.y.right = element_blank(),
+        axis.text.x.top = element_blank(),
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        axis.text = element_text(size = 12)) 
 ```
 
 
