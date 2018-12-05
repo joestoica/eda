@@ -474,6 +474,7 @@ temp <- df %>%
 #   arrange(n) %>% 
 #   select(drug)
 # dput(vec)
+
 # I got it from the vec output, this is ugly 
 temp$drug = factor(temp$drug, levels = c("concerta", "desyrel", "serzone", "symbyax", "trazodone", "pristiq", "sarafem", "celexa", "citalopram", "cymbalta",  "zoloft", "paxil", "prozac", "lexapro", "effexor", "wellbutrin"))
 
@@ -484,13 +485,10 @@ temp %>%
   facet_wrap(.~type, scales = "free") +
   ylab("Count") +
   xlab("Drug Brand Name") + 
-  #ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
+  ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
   theme(plot.title = element_text(size = 14),
         panel.grid.major.y = element_blank()) 
-  #theme_light(base_size = 16)
-
 ```
-
 
 ```{r model creation}
 df <- df %>% as.tibble()
@@ -546,10 +544,10 @@ drugs.polr.long <- drugs.polr.df %>% gather(factor.rating., probability, X1:X10)
   mutate(factor.rating. = substring(factor.rating., 2))
 
 drugs.polr.long$factor.rating. <- factor(drugs.polr.long$factor.rating.,
-                                 levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
+                                         levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
 
 drugs.polr.long$as.factor.sideEffects.f <- factor(drugs.polr.long$as.factor.sideEffects., 
-                                          levels = c("5","4","3","2","1"))
+                                                  levels = c("5","4","3","2","1"))
 
 ordinal.plot <- drugs.polr.long %>%
   ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
@@ -578,9 +576,9 @@ polr4.df <- data.frame(model.frame(drugs_polr4), fitted.values(drugs_polr4))
 polr4.long <- polr4.df %>% gather(factor.effectiveness., probability, X1:X5) %>% 
   mutate(factor.effectiveness. = substring(factor.effectiveness., 2))
 polr4.long$factor.effectiveness. <- factor(polr4.long$factor.effectiveness.,
-                                 levels = c("1", "2", "3", "4", "5"))
+                                           levels = c("1", "2", "3", "4", "5"))
 polr4.long$as.factor.sideEffects. <- factor(polr4.long$as.factor.sideEffects., 
-                                          levels = c("5","4","3","2","1"))
+                                            levels = c("5","4","3","2","1"))
 
 polr4.plot <- polr4.long %>%
   ggplot(aes(as.numeric(factor.effectiveness.), probability, col = as.factor.sideEffects.)) +
@@ -655,22 +653,12 @@ multi.plot <- m1.long %>%
         legend.background = element_blank(),
         axis.text = element_text(size = 12)) 
 
-# m1.long %>% 
-#   mutate(as.factor.effectiveness. = paste0("(E = ", as.factor.effectiveness.),
-#          as.factor.sideEffects. = paste0("SE = ",as.factor.sideEffects., ")")) %>%
-#   unite(col = unite, c(as.factor.effectiveness., as.factor.sideEffects.), sep = ", ") %>% 
-#   ggplot(aes(factor.rating., probability)) + 
-#   geom_point() + 
-#   geom_line() + 
-#   facet_wrap(. ~ unite) +
-#   xlab("Rating") +
-#   ylab("Probability")
-
 # ggsave(multi.plot, filename="multiplot.png")
 ```
 
-Multinomial Logit Model #2 (3 Predictors): SatisfactionRating ~ Effectiveness + SideEffects + DrugType
-```{r}
+
+```{r failed models}
+#Multinomial Logit Model #2 (3 Predictors): SatisfactionRating ~ Effectiveness + SideEffects + DrugType
 # m2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df, family = "multinomial")
 # 
 # m2.df <- data.frame(model.frame(m2), fitted.values(m2))
@@ -692,16 +680,13 @@ Multinomial Logit Model #2 (3 Predictors): SatisfactionRating ~ Effectiveness + 
 #   xlab("Overall Satisfaction Rating") + 
 #   ylab("Probability") +
 #   guides(color = guide_legend("Drug Type"))
-```
 
-Multinomial Logit Model #3 (3 Predictors): SatisfactionRating ~ Effectiveness + SideEffects + DrugBrand
-```{r}
+#Multinomial Logit Model #3 (3 Predictors): SatisfactionRating ~ Effectiveness + SideEffects + DrugBrand
+
 #m3 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df, family = "multinomial")
-```
 
+#Plot multinomial model fits with fewer category levels
 
-Plot multinomial model fits with fewer category levels
-```{r}
 # m.df2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df2, family = "multinomial")
 # 
 # summary(m.df2)
