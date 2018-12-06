@@ -233,13 +233,13 @@ MISC_list <- c("Lamictal",
                "tirosint",
                "topamax")
 type_list <- c(rep("AAP", 3), rep("AMP", 4), rep("BNZ", 4), rep("MISC", 12), rep("MOAI", 2),
-               rep("NRI", 6), rep("OPD", 2), rep("SRI", 10), rep("TCA", 3))
+               rep("SNRI", 6), rep("OPD", 2), rep("SSRI", 10), rep("TCA", 3))
 drug_list <- c(AAP_list, AMP_list, BNZ_list, MISC_list, MOAI_list, NRI_list, OPD_list, SRI_list, TCA_list)
 drug_table <- data.frame(drug = tolower(drug_list), type = type_list)
 # join drug data with drug type
 df <- df %>% left_join(drug_table, by = "drug")
 df <- df %>% 
-  mutate(type = ifelse(type %in% c("SRI", "NRI"), as.character(type), "Other"))
+  mutate(type = ifelse(type %in% c("SSRI", "SNRI"), as.character(type), "Other"))
 ```
 
 
@@ -370,7 +370,7 @@ x <- df %>%
   group_by(type, rating_type, given_score) %>% 
   count()
 names(x) = c("type", "rating_type", "given_score", "count")
-x$type = factor(x$type, levels = c("NRI", "SRI", "Other"))
+x$type = factor(x$type, levels = c("SNRI", "SSRI", "Other"))
 ```
 
 ```{r drug type mosaic}
@@ -434,7 +434,7 @@ df %>%
   count() %>%
   ggplot(aes(as.factor(type),n)) + 
   geom_bar(stat = "identity") +
-  #theme_light(base_size = 20) +
+  theme_light(base_size = 20) +
   theme(panel.grid.major.x = element_blank()) +
   ylab("Count") +
   xlab("Drug Classification") 
@@ -464,7 +464,7 @@ df %>%
 
 ```{r bar chart for counts}
 temp <- df %>% 
-  filter(type %in% c("SRI", "NRI")) %>% 
+  filter(type %in% c("SSRI", "SNRI")) %>% 
   select(drug, type) %>% 
   group_by(drug, type) %>% 
   count() %>% 
@@ -485,7 +485,7 @@ temp %>%
   facet_wrap(.~type, scales = "free") +
   ylab("Count") +
   xlab("Drug Brand Name") + 
-  ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
+  ggtitle("Which Drugs are Reviewed Most in SNRI and SSRI Groups?") +
   theme(plot.title = element_text(size = 14),
         panel.grid.major.y = element_blank()) 
 ```
