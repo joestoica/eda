@@ -171,7 +171,7 @@ MISC_list <- c("Lamictal",
                "tirosint",
                "topamax")
 type_list <- c(rep("AAP", 3), rep("AMP", 4), rep("BNZ", 4), rep("MISC", 12), rep("MOAI", 2),
-               rep("NRI", 6), rep("OPD", 2), rep("SRI", 10), rep("TCA", 3))
+               rep("SNRI", 6), rep("OPD", 2), rep("SSRI", 10), rep("TCA", 3))
 drug_list <- c(AAP_list, AMP_list, BNZ_list, MISC_list, MOAI_list, NRI_list, OPD_list, SRI_list, TCA_list)
 drug_table <- data.frame(drug = tolower(drug_list), type = type_list)
 
@@ -179,7 +179,7 @@ drug_table <- data.frame(drug = tolower(drug_list), type = type_list)
 df <- df %>% left_join(drug_table, by = "drug")
 
 df <- df %>% 
-  mutate(type = ifelse(type %in% c("SRI", "NRI"), as.character(type), "Other"))
+  mutate(type = ifelse(type %in% c("SSRI", "SNRI"), as.character(type), "Other"))
 ```
 
 
@@ -338,7 +338,7 @@ x <- df %>%
   group_by(type, rating_type, given_score) %>% 
   count()
 names(x) = c("type", "rating_type", "given_score", "count")
-x$type = factor(x$type, levels = c("NRI", "SRI", "Other"))
+x$type = factor(x$type, levels = c("SNRI", "SSRI", "Other"))
 ```
 
 ```{r MOSAIC satisfaction by type}
@@ -403,6 +403,7 @@ x %>%
   ggtitle("Ratings of Effectiveness & Side Effects Across Drug Types")
 ```
 
+
 In the same vein, the three drug types perform fairly, with some slight variations that are difficult to distinguish whether the differences can be attributed to randomness or not.s
 
 ```{r cut 3WAY SCATTER}
@@ -426,6 +427,7 @@ In the same vein, the three drug types perform fairly, with some slight variatio
 #   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2)),
 #          reverse = TRUE) +
 #   ggtitle("Effectiveness and Side Effects Rating with Overall User Rating")
+
 ```
 
 ```{r 3WAY heatmap}
@@ -452,7 +454,9 @@ df %>%
   scale_fill_viridis_c()
 ```
 
+
 This heatmap shows how side effects and effectiveness are related to how satisfied the user is with their medication. There appears to be a trend that as effectiveness  increases and side effects get less severe that satisfaction increases, however it is far from perffect. When effectiveness is four and side effects is three, the heatmap value is extremely low.  
+
 
 ## Model Creation 
 
