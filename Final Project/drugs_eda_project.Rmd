@@ -1,9 +1,11 @@
 ---
 title: "Examining Patient Evaluations of Antidepressant Drug Use and Efficacy"
-author: "Joe Stoica, Conor Devins, Geno Kim"
+author: "Joe Stoica, Conor Devins, Eugene Kim"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
   pdf_document:
+    fig_height: 4.5
+    fig_width: 8
 header-includes:
   - \setlength{\parindent}{4em}
   - \setlength{\parskip}{0em}
@@ -35,13 +37,13 @@ According to the 2015 report “Depression and Other Common Mental Disorders: Gl
 
 Research indicates that efforts to maximize treatment benefits for patients with psychiatric illnesses are hampered by poor adherence to prescribed medications (McDonald, Garg, & Haynes, 2002). Among the many different patient factors known to affect adherence to psychiatric treatment (e.g. patient beliefs, stigmas, cost, fears of addiction, etc.), adverse drug side effects are commonly reported as a reason for reluctance to accept or continue pharmacological treatment programs (Fortney et al., 2011; Sansone & Sansone, 2012).  
 
-***
+In order to better understand the choices that patients make when it comes to depression treatment programs, and why they make those choices, this project will focus on three main objectives:
 
-# Statement of goals.
+1.  Identify predominant choice of antidepressant drug types and brands.
 
-1.	What is the relationship between perceived effectiveness, perceived side effects and overall satisfaction? 
+2.	Examine patients’ risk/benefit evaluations across varying treatment options.
 
-2.	What is the relation between perceived side effects and perceived effectiveness? 
+3.  Predict patients' overall satisfaction with a drug based on the drug's effectiveness and side effects.
 
 ## Why do you care?   
 This topic interests us because we believe that 
@@ -187,7 +189,7 @@ For the current research, we utilized a publicly available data set obtained fro
 The drug name (brand), overall satisfaction rating, perceived effectiveness rating, side effects rating, the condition being treated, benefits comment, side effects review, and overall comments.
 Overall Satisfaction was rated on a scale of 1 to 10, with 10 representing highest possible satisfaction. Perceived Effectiveness and Side Effects ratings were given on a 5-step Likert response scale (Table 1). The remaining review aspects (benefits comment, side effects comment, overall comments) were written responses and excluded from our analyses.
 
-***
+\hfill\break
 
 **DrugName**: the name of the drug
 
@@ -209,7 +211,7 @@ Overall Satisfaction was rated on a scale of 1 to 10, with 10 representing highe
 
 **Type**: Chemical type of the drug 
 
-***
+\hfill\break
 
 Here is a snapshot of our data
 
@@ -225,6 +227,7 @@ The raw dataset included patient reviews on drugs taken for various non-psychiat
 Based on our filtering criteria, we identified 46 distinct drug brands across multiple drug types. One question we aimed to address was how different drug types were distributed across the patient sample, as indexed by the relative number of reviews associated with specific drugs. 
 
 SSRIs and SNRIs accounted for a vast majority of the reviews in the data (Figure 1). Out of the 499 patient reviews, 193 (39%) were for drugs classified as SNRIs, and 237 (47%) for drugs falling under the SSRI category. The “Other” category encompassed drugs spanning several unique types including, but not limited to, monoamine oxidase inhibitors (MOAIs), amphetamines, benzodiazepines, atypical antipsychotics, and tricyclic antidepressants. Although each of the aforementioned drug types are like SSRIs and SNRIs, insofar as they each represent distinct biochemical mechanisms of action, we chose to group all other drugs into a single category due to the relatively small number of reviews available for drugs not accounted for by the two dominant categories. That SSRIs are the most popular choice of antidepressant drug is consistent with existing literature. 
+\hfill\break
 
 ```{r cut BAR.C drug type}
 df %>%
@@ -245,6 +248,7 @@ df %>%
 ## Simple EDA
 
 We wanted to familiarize ourselves with our data by getting a general sense of the relationships between our variables. 
+\hfill\break
 
 ```{r bar chart for counts}
 temp <- df %>% 
@@ -274,11 +278,14 @@ temp %>%
   theme_fivethirtyeight()
 ```
 
-Here we see counts for each drug in their respective drug family type. We didn't include the other column because it has a large amount of different drugs that make up such a small proprotion of the overall data. The SRI group has a few more drugs than NRI, NRI has two drugs that are more frequent than the most frequent SRI drug. 
+\hfill\break
+Here we see counts for each drug in their respective drug family type. We didn't include the Other drug category because it has a large amount of different drugs that comprise a relatively small proprotion of the overall data. The SSRI group has a few more drugs than SNRI, SNRI has two drugs that are more frequent than the most frequent SSRI.
+\hfill\break
 
 ### Satisfaction Measured Against Side Effects and Effectiveness
 
 Next we examined how the users' overall satisfaction are related to the users' reported side effects and effectiveness levels.
+\hfill\break
 
 ```{r STACK BAR SE SATIS}
 df %>%
@@ -301,7 +308,9 @@ df %>%
 # ggsave(side_satis_plot, filename = "side_satis_plot.png", height = 9, width = 16)
 ```
 
-The plot revelas that the worse the side effects are, the least satisfied the subjects were. This generally makes a lot of sense because people who are already feeling bad and are taking medications to mitigate their ailments most likely don't like feeling additionally worse. It's interesting to see how over half of the users reporting no side efects rate the drug 10/10, while almost 80% of users with extremely severe side effects have a satisfaction level of 1.
+\hfill\break
+The plot reveals that the worse the side effects are, the least satisfied the subjects were. This generally makes a lot of sense because people who are already feeling bad and are taking medications to mitigate their ailments most likely don't like feeling additionally worse. It's interesting to see how over half of the users reporting no side efects rate the drug 10/10, while almost 80% of users with extremely severe side effects have a satisfaction level of 1.
+\hfill\break
 
 ```{r STACK BAR EFF SATIS}
 df %>%
@@ -325,7 +334,9 @@ df %>%
 #ggsave(satis_perc, filename = "satis_perc.png", height = 9, width = 16)
 ```
 
-The above plot shows that the more effective the drug was, the more satisfied the users were. The response proportions are not as extreme as side effects although. It is worth mentioning that it is a possibility that users have a tendency to select the most extreme values, and it calls into account how accurate a Likert variable can truly be due to its subjective nature. 
+\hfill\break
+The above plot shows that the more effective the drug was, the more satisfied the users were. The response proportions are not as extreme as side effects however. It is worth mentioning the possibility that users have a tendency to select the most extreme values, and it calls into account how accurate a Likert variable can truly be due to its subjective nature. 
+\hfill\break
 
 ```{r make mosiac df}
 # Set up data frame for mosaic plots
@@ -365,7 +376,9 @@ x %>%
   ggtitle("Overall Satsifaction By Drug Type")
 ```
 
+\hfill\break
 This mosaic plot shows that for the most part the three groups are fairly similar in terms of rating. The differences might be attributed to just random chance. 
+\hfill\break
 
 ```{r MOSAIC for SE and EFF} 
 # keep
@@ -398,7 +411,9 @@ x %>%
   ggtitle("Ratings of Effectiveness & Side Effects Across Drug Types")
 ```
 
-In the same vein, the three drug types perform fairly, with some slight variations that are difficult to distinguish whether the differences can be attributed to randomness or not.s
+\hfill\break
+Similarly,  the three drug types perform fairly, with some slight variations that are difficult to distinguish whether the differences can be attributed to randomness or not.
+\hfill\break
 
 ```{r cut 3WAY SCATTER}
 # df %>% 
@@ -454,7 +469,6 @@ This heatmap shows how side effects and effectiveness are related to how satisfi
 
 ## Model Creation 
 
-
 ### Ordinal Logistic Regression Model
 
 We wanted to fit some models using our data to try and see if we could gain any more insight into how user satsifaction can be predicted using our drug data. The first model we looked at was an ordered logistic regression since our response variable in on a scale from 1 to 10. I created three models, which each model using side effects and effectiveness as predictors. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest AIC, which is a statistic produced from the model output used to compare against models. So even though it doesnt have the lowest residual deviance out of three models, it is the most interpretable model and lowest AIC, so we'll use that.
@@ -504,7 +518,7 @@ drugs.polr.long %>%
   guides(color = guides(col=FALSE)) + 
   scale_colour_viridis_d() +
   scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Effectiveness")) + 
-  scale_y_continuous(sec.axis = sec_axis(~.*1, "Side Effects")) +
+  scale_y_continuous(breaks = seq(0,1,0.5), sec.axis = sec_axis(~.*1, "Side Effects")) +
   theme(plot.subtitle = element_text(size = 8),
         axis.text.y.right = element_blank(),
         axis.text.x.top = element_blank(),
@@ -519,14 +533,13 @@ drugs.polr.long %>%
 
 This plot shows the probabilites from the ordinal model. We can see that the model generally predicts high satisfaction as effectiveness and side effects increase. The probabilites are all generally low though, which suggests that it's pretty hard to accurately make a prediction based on this data alone. 
 
-
 ### Multinomial Logistic Regression Model
 
 We also created multinomial models to see how well it would do treating the response as unordered. We made a few models all containing side effects and effectiveness as predictors. We also exmained drug type, the drug itself, and interactions between drug type and effectiveness and side effects. Once again we went with the simplest model since it had the best AIC and not a significantly worse deviance.
 
 ```{r MULTINOMIAL make model} 
 multi_mod <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
-deviance(multi_mod)
+#deviance(multi_mod)
 ```
 
 ```{r MULTINOMIAL make df}
@@ -555,7 +568,7 @@ multi_mod.long %>%
   guides(color = guides(col=FALSE)) + 
   scale_colour_viridis_d() +
   scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Effectiveness")) + 
-  scale_y_continuous(sec.axis = sec_axis(~.*1, "Side Effects")) +
+  scale_y_continuous(breaks = seq(0,1,0.5), sec.axis = sec_axis(~.*1, "Side Effects")) +
   theme(plot.subtitle = element_text(size = 8),
         axis.text.y.right = element_blank(),
         axis.text.x.top = element_blank(),
@@ -636,13 +649,27 @@ The mulitnomial model appears to be a little more decisive than the ordinal mode
 #         axis.text = element_text(size = 12)) 
 ```
 
-### State answers to your questions;
+## Conclusions
 
-### Describe how you came to these answers;
+### 1.  Identify predominant choice of antidepressant drug types and brands.
 
-### Explore the implications to your answers. For example, if your answer is a non-trivial model, plot the fit and describe what’s going on in words.
+We found from our exploratory data analysis that SSRIs and SNRIs are by far the most frequently chosen classes of drugs to treat depression, with SSRIs being slightly more popular. Among SSRIs, the most commonly used drug is Lexapro, followed by Prozac, Paxil, and Zoloft. Wellbutrin and Effexor are the most commonly chosen SNRIs. While we did not examine the benefit/side effect tradeoff for individual medications, a possible cause that these drugs are the most popular is that they are the most effective while having the fewest side effects, or at least side effects that are manageable enough that the benefits they provide are worth the side effects. Another possible explanation is that the companies that manufacture these drugs may have the most resources to spend on marketing and advertising, and so they are the ones that patients ask their doctors about specifically when deciding on treatment options. That would cause certain drugs to be more common than others, even if they are not necessarily the most effective or give the highest ratings of patient satisfaction.
 
-# Identification of work left to do/limitations.
+### 2.	Examine patients’ risk/benefit evaluations across varying treatment options.
+
+We found that patients' evaluations of the effectiveness and side effects of SSRIs and SNRIs are remarkably similar, despite SSRIs being the more common choice. The distributions patient ratings across the two scales were almost exactly the same. In addition, we found that drugs in the "other" category also had a similar evaluation profile to those of SSRIs and SNRIs, although there seemed to be more observations on both the high and low end of each scale, wheres that SSRIs and SNRIs tended to have less extreme ratings. This could be due in part to the fact that "other" drugs account for only 14% of all cases, as well as the fact that the category potentially encompasses many varying classes of drugs, whereas the other two categories only account for one drug class each. We also found that SSRIs and SNRIs had similar overall satisfaction ratings, suggesting that there may not be a significant difference between the two classes of drugs when it comes to effectiveness, side effects, or overall satisfaction.
+
+
+# TODO 
+3.  Predict patients' overall satisfaction with a drug based on the drug's effectiveness and side effects.
+
+
+## Limitations/Future Work
+
+One of the main limitations of our analysis was the fact that we lumped together all patients who were being treated for depression, when in fact many of the patients were being treated for depression in addition to other conditions, e.g., anxiety, PTSD, bipolar disorder, etc. These patients may have had their evaluations of their treatement swayed by which of these conditions they were most focused on--for example, a patient may have given a decreased satisfaction rating even if the drug was very effective at treating depression, but was not effective at treating their main concern which was bipolar disorder. Another limitation is the fact that we do not have information on why the patient selected the treatment they did. If there was a variable that stated whether the patient specifically requested a certain prescription or whether their doctor suggested a particular treatment or there was some other reason, we would be able to draw some even more interesting conclusions. Finally, we sacrificed a little bit of clarity by grouping all drugs other than SSRIs and SNRIs into one category, but since we were mostly interested in comparing the two major categories, this decision seemed appropriate.
+
+One thing we would have really liked to do was sentiment analysis on the actual text of the reviews left by patients to get a better sense of their overall satisfaction with their treatment. Unfortunately, none of the readily available packages that currently for such a task are well-configured for medical terminology, so we got some unusual results when we tried to use it in this particular context. 
+
 
 # References
 
