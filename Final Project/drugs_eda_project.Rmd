@@ -20,7 +20,6 @@ library(lubridate)
 library(ggthemes)
 library(ggmosaic)
 library(VGAM)
-install.packages("kableExtra")
 library(kableExtra)
 ```
 
