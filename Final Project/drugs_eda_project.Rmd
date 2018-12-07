@@ -4,6 +4,8 @@ author: "Joe Stoica, Conor Devins, Eugene Kim"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
   html_document:
+    fig_height: 4.5
+    fig_width: 8
 header-includes:
   - \setlength{\parindent}{4em}
   - \setlength{\parskip}{0em}
@@ -20,7 +22,6 @@ library(lubridate)
 library(ggthemes)
 library(ggmosaic)
 library(VGAM)
-install.packages("kableExtra")
 library(kableExtra)
 ```
 
