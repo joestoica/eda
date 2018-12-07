@@ -174,7 +174,7 @@ df <- df %>%
 
 For the current research, we utilized a publicly available data set obtained from the UCI Machine Learning Repository, which contains patient reviews for specific drugs being taken to treat various conditions (Gräßer, Kallumadi, Malberg, & Zaunseder, 2018). The authors of the data set obtained the patient drug review data by pooling across multiple online pharmaceutical review sites. Each patient review for a specific drug consisted of the following:
 The drug name (brand), overall satisfaction rating, perceived effectiveness rating, side effects rating, the condition being treated, benefits comment, side effects review, and overall comments.
-Overall Satisfaction was rated on a scale of 1 to 10, with 10 representing highest possible satisfaction. Perceived Effectiveness and Side Effects ratings were given on a 5-step Likert response scale (Table 1). The remaining review aspects (benefits comment, side effects comment, overall comments) were written responses and excluded from our analyses.
+Overall Satisfaction was rated on a scale of 1 to 10, with 10 representing highest possible satisfaction. Perceived Effectiveness and Side Effects ratings were given on a 5-step Likert response scale. The remaining review aspects (benefits comment, side effects comment, overall comments) were written responses and excluded from our analyses.
 
 ***
 
@@ -212,7 +212,7 @@ The raw dataset included patient reviews on drugs taken for various non-psychiat
 
 ## Choice of Drug Brands and Type
 
-Based on our filtering criteria, we identified 46 distinct drug brands across multiple drug types. One question we aimed to address was how different drug types were distributed across the patient sample, as indexed by the relative number of reviews associated with specific drugs. 
+  Based on our filtering criteria, we identified 46 distinct drug brands across multiple drug types. One question we aimed to address was how different drug types were distributed across the patient sample, as indexed by the relative number of reviews associated with specific drugs. 
 
 SSRIs and SNRIs accounted for a vast majority of the reviews in the data (Figure 1). Out of the 499 patient reviews, 193 (39%) were for drugs classified as SNRIs, and 237 (47%) for drugs falling under the SSRI category. The “Other” category encompassed drugs spanning several unique types including, but not limited to, monoamine oxidase inhibitors (MOAIs), amphetamines, benzodiazepines, atypical antipsychotics, and tricyclic antidepressants. Although each of the aforementioned drug types are like SSRIs and SNRIs, insofar as they each represent distinct biochemical mechanisms of action, we chose to group all other drugs into a single category due to the relatively small number of reviews available for drugs not accounted for by the two dominant categories. That SSRIs are the most popular choice of antidepressant drug is consistent with existing literature. 
 
@@ -355,11 +355,10 @@ x %>%
   ggtitle("Overall Satsifaction By Drug Type")
 ```
 
-This mosaic plot shows that for the most part the three groups are fairly similar in terms of overall satisfaction ratings. The differences might be attributed to just random chance. 
+This mosaic plot shows that the distribution of overall satisfaction ratings do not systematically vary across the major drug categories. Though the "Other" category appears to have marginally better overall satisfaction ratings, this may be attributed to greater noise due to the relatively small sample size.
 
-
-Mosaic plot of user ratings of drug effectiveness and side effects by drug type (SRI vs NRIs)
 ```{r MOSAIC for SE and EFF} 
+# Mosaic plot of user ratings of drug effectiveness and side effects by drug type (SSRI vs SNRIs)
 # keep
 
 x %>% 
@@ -391,7 +390,7 @@ x %>%
 ```
 
 
-Likewise, there does not appear to be any systematic differences in the distribution of ratings for perceived effectiveness or side effects between drug categories.
+Likewise, there does not appear to be any systematic differences in the distribution of ratings for perceived effectiveness or side effects between drug categories. As stated previously, the marginal improvements in ratings for "Other" drug category may simply be attributed to noise. 
 
 ```{r cut 3WAY SCATTER}
 # df %>% 
@@ -447,7 +446,7 @@ This heatmap shows how side effects and effectiveness are related to how satisfi
 
 ## Model Creation 
 
-We wanted to fit some models using our data to try and see if we could gain any more insight into how user satsifaction can be predicted using our drug data. The first model we looked at was an ordered logistic regression since our response variable in on a scale from 1 to 10. I created three models, which each model using side effects and effectiveness as predictors. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest AIC, which is a statistic produced from the model output used to compare against models. So even though it doesnt have the lowest residual deviance out of three models, it is the most interpretable model and lowest AIC, so we'll use that.
+We wanted to fit some models using our data to try and see if we could gain any more insight into how user satsifaction can be predicted using our drug data. The first model we looked at was an ordered logistic regression since our response variable in on a scale from 1 to 10. Three models are provided, each using side effects and effectiveness as predictors. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest AIC, which is a statistic produced from the model output used to compare against models. So even though it doesnt have the lowest residual deviance out of three models, it is the most interpretable model and lowest AIC, so we'll use that.
 
 ```{r ORDINAL LOGISTIC model creation}
 df <- df %>% as.tibble()
@@ -488,7 +487,7 @@ drugs.polr.long %>%
   geom_point() + 
   facet_grid(as.factor.sideEffects.f ~ as.factor.effectiveness.) +
   xlab("Overall Satisfaction Rating") + ylab("Probability") + 
-  labs(title = "Ordinal Logistic Model Probabilities")+
+  labs(title = "Proportional Odds Logistic Model: Satisfaction ~ Side Effects + Effectiveness")+
   guides(color = guides(col=FALSE)) + 
   scale_colour_viridis_d() +
   scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Effectiveness")) + 
@@ -505,7 +504,8 @@ drugs.polr.long %>%
 #ggsave(ordinal.plot, filename="ordinal_plot.png")
 ```
 
-This plot shows the probabilites from the ordinal model. We can see that the model generally predicts high satisfaction with improved effectiveness and side effects ratings. 
+
+This plot shows the proportional odds logistic model fits, where it is apparent that the model generally predicts high satisfaction with improved effectiveness and side effects ratings. For ratings of effectiveness and side effects that are extreme in consistent directions (e.g. effectiveness & side effects = 5), the model provides very robust predicted probabilities for  satsifaction scores. Conversely, when effectiveness and side effects ratings are intermediate in intensity, predicted satisfaction ratings are markedly diffuse across the rating scale. This indicates that there is much less agreement about satisfaction among patients who gave moderate ratings for perceived effectiveness and severity of side effects.
 
 ```{r}
 # Multinomial Logit Model #1 (2 predictors): SatisfactionRating ~ Effectiveness + SideEffects
@@ -565,7 +565,7 @@ polr4.long %>%
   geom_point() + 
   facet_grid(~ as.factor.sideEffects.) +
   xlab("Perceived Effectiveness") + ylab("Probability") + 
-  labs(title = "Ordinal Logistic Model Probabilities")+
+  labs(title = "Proportional Odds Logistic Model: Perceived Effectiveness ~ Side Effects") +
   guides(color = guides(col=FALSE)) + 
   scale_colour_viridis_d() +
   scale_x_continuous(breaks = seq(1,5,1), sec.axis = sec_axis(~.*1, "Side Effects")) + 
@@ -578,7 +578,7 @@ polr4.long %>%
         legend.background = element_blank(),
         axis.text = element_text(size = 12)) 
 ```
-
+Here we show model fits showing the degree to which side effects predict perceived drug effectiveness. It is clear that there is a strong relationship between perceived effectiveness and drug side effects, where the worst effectiveness ratings have the highest predicted probabilities when side effects are rated as extremely severe. These results show support the notion that drug side effects are in an important factor in the patients' evaluation of the extent to which the drug is actually addressing their underlying needs (depression).
 
 ```{r}
 # Show polr plot with only single predictor using Side Effects to predict Overall Satisfaction
@@ -615,7 +615,7 @@ polr.se.long %>%
 ```
 
 
-## Conclusions
+## Summary
 
 1.  Identify predominant choice of antidepressant drug types and brands.
 
@@ -634,18 +634,12 @@ One thing we would have really liked to do was sentiment analysis on the actual 
 
 # References
 
-Anderson, I. M., Ferrier, I. N., Baldwin, R. C., Cowen, P. J., Howard, L., Lewis, G., & Tylee, A. 	(2008). Evidence-based guidelines for treating depressive disorders with antidepressants: 	a revision of the 2000 British Association for Psychopharmacology guidelines. Journal of 	Psychopharmacology, 22(4), 343-396.
-
-Fortney, J. C., Pyne, J. M., Edlund, M. J., Stecker, T., Mittal, D., Robinson, D. E., & Henderson, 	K. L. (2011). Reasons for antidepressant nonadherence among veterans treated in primary 	care clinics. The Journal of Clinical Psychiatry, 72(6), 827-834.
-
+Anderson, I. M., Ferrier, I. N., Baldwin, R. C., Cowen, P. J., Howard, L., Lewis, G., & Tylee, A. 	(2008). Evidence-based guidelines for treating depressive disorders with antidepressants: a revision of the 2000 British Association for Psychopharmacology guidelines. Journal of Psychopharmacology, 22(4), 343-396.
+Fortney, J. C., Pyne, J. M., Edlund, M. J., Stecker, T., Mittal, D., Robinson, D. E., & Henderson, 	K. L. (2011). Reasons for antidepressant nonadherence among veterans treated in primary care clinics. The Journal of Clinical Psychiatry, 72(6), 827-834.
 McDonald, H. P., Garg, A. X., & Haynes, R. B. (2002). Interventions to enhance patient 		adherence to medication prescriptions: scientific review. JAMA, 288(22), 2868-2879.
-
 Qaseem, A., Barry, M. J., & Kansagara, D. (2016). Nonpharmacologic versus pharmacologic 	treatment of adult patients with major depressive disorder: a clinical practice guideline 	from the American College of Physicians. Annals of Internal Medicine, 164(5), 350-359.
-
 Sansone, R. A., & Sansone, L. A. (2012). Antidepressant adherence: are patients taking their 	medications?. Innovations in Clinical Neuroscience, 9(5-6), 41-6.
-
 Won, E., Park, S. C., Han, K. M., Sung, S. H., Lee, H. Y., Paik, J. W., & Lee, K. J. (2014). 	Evidence-based, pharmacological treatment guideline for depression in Korea. Journal of 	Korean Medical Science, 29(4), 468-484.
-
 
 
 ```{r unused code}
