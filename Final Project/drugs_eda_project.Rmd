@@ -472,6 +472,7 @@ This heatmap shows how side effects and effectiveness are related to how satisfi
 ### Ordinal Logistic Regression Model
 
 We wanted to fit some models using our data to try and see if we could gain any more insight into how user satsifaction can be predicted using our drug data. The first model we looked at was an ordered logistic regression since our response variable in on a scale from 1 to 10. I created three models, which each model using side effects and effectiveness as predictors. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest AIC, which is a statistic produced from the model output used to compare against models. So even though it doesnt have the lowest residual deviance out of three models, it is the most interpretable model and lowest AIC, so we'll use that.
+\hfill\break
 
 ```{r ORDINAL model creation}
 df <- df %>% as.tibble()
@@ -531,11 +532,13 @@ drugs.polr.long %>%
 #ggsave(ordinal.plot, filename="ordinal_plot.png")
 ```
 
+\hfill\break
 This plot shows the probabilites from the ordinal model. We can see that the model generally predicts high satisfaction as effectiveness and side effects increase. The probabilites are all generally low though, which suggests that it's pretty hard to accurately make a prediction based on this data alone. 
 
 ### Multinomial Logistic Regression Model
 
 We also created multinomial models to see how well it would do treating the response as unordered. We made a few models all containing side effects and effectiveness as predictors. We also exmained drug type, the drug itself, and interactions between drug type and effectiveness and side effects. Once again we went with the simplest model since it had the best AIC and not a significantly worse deviance.
+\hfill\break
 
 ```{r MULTINOMIAL make model} 
 multi_mod <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
@@ -582,6 +585,7 @@ multi_mod.long %>%
 # ggsave(multi.plot, filename="multiplot.png")
 ```
 
+\hfill\break
 The mulitnomial model appears to be a little more decisive than the ordinal models, with most of the facets having a clear peak probability for one of the ratings. The deviance of this model is 1218.239, which is still extremely high, so this model probably isn't great for prediction.
 
 ```{r cut single model EFF}
