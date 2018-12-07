@@ -36,13 +36,7 @@ According to the 2015 report “Depression and Other Common Mental Disorders: Gl
 
 Research indicates that efforts to maximize treatment benefits for patients with psychiatric illnesses are hampered by poor adherence to prescribed medications (McDonald, Garg, & Haynes, 2002). Among the many different patient factors known to affect adherence to psychiatric treatment (e.g. patient beliefs, stigmas, cost, fears of addiction, etc.), adverse drug side effects are commonly reported as a reason for reluctance to accept or continue pharmacological treatment programs (Fortney et al., 2011; Sansone & Sansone, 2012).  
 
-In order to better understand the choices that patients make when it comes to depression treatment programs, and why they make those choices, this project will focus on three main objectives:
-
-1.  Identify predominant choice of antidepressant drug types and brands.
-
-2.	Examine patients’ risk/benefit evaluations across varying treatment options.
-
-3.  Predict patients' overall satisfaction with a drug based on the drug's effectiveness and side effects.
+Given the considerably large array of existing pharmacological treatment options for depression and variability in risk/benefit trade-offs thereof, it is worth examining critical aspects of patients’ subjective treatment experiences across a representative sample of the antidepressant drug landscape. The primary motivations for the current research are to examine patients’ risk/benefit evaluations across varying drug treatment options and to better understand relationships between multiple aspects of patients’ subjective treatment experiences.
 
 
 ***
@@ -513,9 +507,8 @@ drugs.polr.long %>%
 
 This plot shows the probabilites from the ordinal model. We can see that the model generally predicts high satisfaction with improved effectiveness and side effects ratings. 
 
-
-Multinomial Logit Model #1 (2 predictors): SatisfactionRating ~ Effectiveness + SideEffects
 ```{r}
+# Multinomial Logit Model #1 (2 predictors): SatisfactionRating ~ Effectiveness + SideEffects
 multi_mod <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
 
 multi_mod.df <- data.frame(model.frame(multi_mod), fitted.values(multi_mod))
