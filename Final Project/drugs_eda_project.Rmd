@@ -35,19 +35,14 @@ According to the 2015 report “Depression and Other Common Mental Disorders: Gl
 
 Research indicates that efforts to maximize treatment benefits for patients with psychiatric illnesses are hampered by poor adherence to prescribed medications (McDonald, Garg, & Haynes, 2002). Among the many different patient factors known to affect adherence to psychiatric treatment (e.g. patient beliefs, stigmas, cost, fears of addiction, etc.), adverse drug side effects are commonly reported as a reason for reluctance to accept or continue pharmacological treatment programs (Fortney et al., 2011; Sansone & Sansone, 2012).  
 
-***
+In order to better understand the choices that patients make when it comes to depression treatment programs, and why they make those choices, this project will focus on three main objectives:
 
-# Statement of goals.
+1.  Identify predominant choice of antidepressant drug types and brands.
 
-1.	What is the relationship between perceived effectiveness, perceived side effects and overall satisfaction? 
+2.	Examine patients’ risk/benefit evaluations across varying treatment options.
 
-2.	What is the relation between perceived side effects and perceived effectiveness? 
+3.  Predict patients' overall satisfaction with a drug based on the drug's effectiveness and side effects.
 
-## Why do you care?   
-TODO
-
-## Why should we care?
-TODO
 
 ***
 
@@ -55,8 +50,8 @@ TODO
 
 ```{r data import}
 # From https://archive.ics.uci.edu/ml/datasets/Drug+Review+Dataset+%28Druglib.com%29#
-drugs_test <- read_csv(file = 'drugLibTest_raw.csv')
-drugs_train <- read_csv(file = 'drugLibTrain_raw.csv')
+drugs_test <- read_csv(file = 'data/drugLibTest_raw.csv')
+drugs_train <- read_csv(file = 'data/drugLibTrain_raw.csv')
 drugs <- rbind(drugs_test, drugs_train) %>% as.tibble() 
 ```
 
@@ -248,7 +243,7 @@ We wanted to familiarize ourselves with our data by getting a general sense of t
 
 ```{r bar chart for counts}
 temp <- df %>% 
-  filter(type %in% c("SRI", "NRI")) %>% 
+  filter(type %in% c("SSRI", "SNRI")) %>% 
   select(drug, type) %>% 
   group_by(drug, type) %>% 
   count() %>% 
@@ -626,13 +621,27 @@ polr.se.long %>%
 ```
 
 
-### State answers to your questions;
+## Conclusions
 
-### Describe how you came to these answers;
+1.  Identify predominant choice of antidepressant drug types and brands.
 
-### Explore the implications to your answers. For example, if your answer is a non-trivial model, plot the fit and describe what’s going on in words.
+We found from our exploratory data analysis that SSRIs and SNRIs are by far the most frequently chosen classes of drugs to treat depression, with SSRIs being slightly more popular. Among SSRIs, the most commonly used drug is Lexapro, followed by Prozac, Paxil, and Zoloft. Wellbutrin and Effexor are the most commonly chosen SNRIs. While we did not examine the benefit/side effect tradeoff for individual medications, a possible cause that these drugs are the most popular is that they are the most effective while having the fewest side effects, or at least side effects that are manageable enough that the benefits they provide are worth the side effects. Another possible explanation is that the companies that manufacture these drugs may have the most resources to spend on marketing and advertising, and so they are the ones that patients ask their doctors about specifically when deciding on treatment options. That would cause certain drugs to be more common than others, even if they are not necessarily the most effective or give the highest ratings of patient satisfaction.
 
-# Identification of work left to do/limitations.
+2.	Examine patients’ risk/benefit evaluations across varying treatment options.
+
+We found that patients' evaluations of the effectiveness and side effects of SSRIs and SNRIs are remarkably similar, despite SSRIs being the more common choice. The distributions patient ratings across the two scales were almost exactly the same. In addition, we found that drugs in the "other" category also had a similar evaluation profile to those of SSRIs and SNRIs, although there seemed to be more observations on both the high and low end of each scale, wheres that SSRIs and SNRIs tended to have less extreme ratings. This could be due in part to the fact that "other" drugs account for only 14% of all cases, as well as the fact that the category potentially encompasses many varying classes of drugs, whereas the other two categories only account for one drug class each. We also found that SSRIs and SNRIs had similar overall satisfaction ratings, suggesting that there may not be a significant difference between the two classes of drugs when it comes to effectiveness, side effects, or overall satisfaction.
+
+
+# TODO 
+3.  Predict patients' overall satisfaction with a drug based on the drug's effectiveness and side effects.
+
+
+## Limitations/Future Work
+
+One of the main limitations of our analysis was the fact that we lumped together all patients who were being treated for depression, when in fact many of the patients were being treated for depression in addition to other conditions, e.g., anxiety, PTSD, bipolar disorder, etc. These patients may have had their evaluations of their treatement swayed by which of these conditions they were most focused on--for example, a patient may have given a decreased satisfaction rating even if the drug was very effective at treating depression, but was not effective at treating their main concern which was bipolar disorder. Another limitation is the fact that we do not have information on why the patient selected the treatment they did. If there was a variable that stated whether the patient specifically requested a certain prescription or whether their doctor suggested a particular treatment or there was some other reason, we would be able to draw some even more interesting conclusions. Finally, we sacrificed a little bit of clarity by grouping all drugs other than SSRIs and SNRIs into one category, but since we were mostly interested in comparing the two major categories, this decision seemed appropriate.
+
+One thing we would have really liked to do was sentiment analysis on the actual text of the reviews left by patients to get a better sense of their overall satisfaction with their treatment. Unfortunately, none of the readily available packages that currently for such a task are well-configured for medical terminology, so we got some unusual results when we tried to use it in this particular context. 
+
 
 # References
 
