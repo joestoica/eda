@@ -20,6 +20,7 @@ library(lubridate)
 library(ggthemes)
 library(ggmosaic)
 library(VGAM)
+install.packages("kableExtra")
 library(kableExtra)
 ```
 
@@ -360,7 +361,7 @@ x %>%
   ggtitle("Overall Satsifaction By Drug Type")
 ```
 
-This mosaic plot shows that for the most part the three groups are fairly similar in terms of rating. The differences might be attributed to just random chance. 
+This mosaic plot shows that for the most part the three groups are fairly similar in terms of overall satisfaction ratings. The differences might be attributed to just random chance. 
 
 
 Mosaic plot of user ratings of drug effectiveness and side effects by drug type (SRI vs NRIs)
@@ -396,7 +397,7 @@ x %>%
 ```
 
 
-In the same vain, the three drug types perform fairly, with some slight variations that are difficult to distinguish whether the differences can be attributed to randomness or not.s
+Likewise, there does not appear to be any systematic differences in the distribution of ratings for perceived effectiveness or side effects between drug categories.
 
 ```{r cut 3WAY SCATTER}
 # df %>% 
@@ -446,7 +447,7 @@ df %>%
   scale_fill_viridis_c()
 ```
 
-This heatmap shows how side effects and effectiveness are related to how satisfied the user is with their medication. There appears to be a trend that as effectiveness  increases and side effects get less severe that satisfaction increases, however it is far from perffect. When effectiveness is four and side effects is three, the heatmap value is extremely low.  
+This heatmap shows how side effects and effectiveness are related to how satisfied the user is with their medication. There appears to be a trend that as effectiveness increases and side effects get less severe that overall satisfaction increases, which is unsurprising. However, there does seem to be some discontinuity. For example, average satisfaction level is considerably low despite effectiveness rating of 4 and a moderate side effects rating. 
 
 ***
 
