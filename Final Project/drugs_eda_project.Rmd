@@ -3,7 +3,7 @@ title: "Examining Patient Evaluations of Antidepressant Drug Use and Efficacy"
 author: "Joe Stoica, Conor Devins, Geno Kim"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
-  html_document:
+  pdf_document:
 header-includes:
   - \setlength{\parindent}{4em}
   - \setlength{\parskip}{0em}
@@ -44,10 +44,10 @@ Research indicates that efforts to maximize treatment benefits for patients with
 2.	What is the relation between perceived side effects and perceived effectiveness? 
 
 ## Why do you care?   
-TODO
+This topic interests us because we believe that 
 
 ## Why should we care?
-TODO
+
 
 ***
 
@@ -55,8 +55,8 @@ TODO
 
 ```{r data import}
 # From https://archive.ics.uci.edu/ml/datasets/Drug+Review+Dataset+%28Druglib.com%29#
-drugs_test <- read_csv(file = 'drugLibTest_raw.csv')
-drugs_train <- read_csv(file = 'drugLibTrain_raw.csv')
+drugs_test <- read_csv(file = 'data/drugLibTest_raw.csv')
+drugs_train <- read_csv(file = 'data/drugLibTrain_raw.csv')
 drugs <- rbind(drugs_test, drugs_train) %>% as.tibble() 
 ```
 
@@ -232,10 +232,10 @@ df %>%
   count() %>%
   ggplot(aes(as.factor(type),n)) +
   geom_bar(stat = "identity") +
-  #theme_light(base_size = 20) +
   theme(panel.grid.major.x = element_blank()) +
   ylab("Count") +
-  xlab("Drug Classification")
+  xlab("Drug Classification") + 
+  theme_fivethirtyeight()
 ```
 
 *** 
@@ -248,7 +248,7 @@ We wanted to familiarize ourselves with our data by getting a general sense of t
 
 ```{r bar chart for counts}
 temp <- df %>% 
-  filter(type %in% c("SRI", "NRI")) %>% 
+  filter(type %in% c("SSRI", "SNRI")) %>% 
   select(drug, type) %>% 
   group_by(drug, type) %>% 
   count() %>% 
@@ -260,13 +260,13 @@ temp <- df %>%
 # dput(vec)
 
 # I got it from the vec output, this is ugly 
-temp$drug = factor(temp$drug, levels = c("concerta", "desyrel", "serzone", "symbyax", "trazodone", "pristiq", "sarafem", "celexa", "citalopram", "cymbalta",  "zoloft", "paxil", "prozac", "lexapro", "effexor", "wellbutrin"))
+temp$drug = factor(temp$drug, levels = c("concerta", "desyrel", "serzone", "symbyax", "trazodone", "pristiq", "sarafem", "celexa", "citalopram", "cymbalta", "zoloft", "paxil", "prozac", "lexapro", "effexor", "wellbutrin"))
 
 temp %>% 
   ggplot(aes(drug, n)) +
   geom_bar(stat = "identity") + 
   coord_flip() + 
-  facet_wrap(.~type, scales = "free") +
+  facet_wrap(. ~ type, scales = "free") +
   theme(panel.grid.major.y = element_blank()) +
   ylab("Count") +
   xlab("Drug Brand Name") + 
@@ -367,8 +367,6 @@ x %>%
 
 This mosaic plot shows that for the most part the three groups are fairly similar in terms of rating. The differences might be attributed to just random chance. 
 
-
-Mosaic plot of user ratings of drug effectiveness and side effects by drug type (SRI vs NRIs)
 ```{r MOSAIC for SE and EFF} 
 # keep
 
@@ -399,7 +397,6 @@ x %>%
         strip.background = element_blank()) + 
   ggtitle("Ratings of Effectiveness & Side Effects Across Drug Types")
 ```
-
 
 In the same vein, the three drug types perform fairly, with some slight variations that are difficult to distinguish whether the differences can be attributed to randomness or not.s
 
@@ -457,9 +454,12 @@ This heatmap shows how side effects and effectiveness are related to how satisfi
 
 ## Model Creation 
 
+
+### Ordinal Logistic Regression Model
+
 We wanted to fit some models using our data to try and see if we could gain any more insight into how user satsifaction can be predicted using our drug data. The first model we looked at was an ordered logistic regression since our response variable in on a scale from 1 to 10. I created three models, which each model using side effects and effectiveness as predictors. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest AIC, which is a statistic produced from the model output used to compare against models. So even though it doesnt have the lowest residual deviance out of three models, it is the most interpretable model and lowest AIC, so we'll use that.
 
-```{r ORDINAL LOGISTIC model creation}
+```{r ORDINAL model creation}
 df <- df %>% as.tibble()
 
 # side effects
@@ -478,7 +478,7 @@ drugs_polr2 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(
 drugs_polr3 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df)
 ```
 
-```{r}
+```{r ORDINAL make df}
 # tidying data to plot nicely
 drugs.polr.df <- data.frame(model.frame(drugs_polr), fitted.values(drugs_polr))
 
@@ -490,7 +490,9 @@ drugs.polr.long$factor.rating. <- factor(drugs.polr.long$factor.rating.,
 
 drugs.polr.long$as.factor.sideEffects.f <- factor(drugs.polr.long$as.factor.sideEffects., 
                                                   levels = c("5","4","3","2","1"))
+```
 
+```{r ORDINAL plot}
 #ordinal.plot <- 
 drugs.polr.long %>%
   ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
@@ -515,12 +517,19 @@ drugs.polr.long %>%
 #ggsave(ordinal.plot, filename="ordinal_plot.png")
 ```
 
-This plot shows the probabilites from the ordinal model. We can see that the model generally predicts high satisfaction as effectiveness and side effects increase. 
+This plot shows the probabilites from the ordinal model. We can see that the model generally predicts high satisfaction as effectiveness and side effects increase. The probabilites are all generally low though, which suggests that it's pretty hard to accurately make a prediction based on this data alone. 
 
 
-Multinomial Logit Model #1 (2 predictors): SatisfactionRating ~ Effectiveness + SideEffects
-```{r}
+### Multinomial Logistic Regression Model
+
+We also created multinomial models to see how well it would do treating the response as unordered. We made a few models all containing side effects and effectiveness as predictors. We also exmained drug type, the drug itself, and interactions between drug type and effectiveness and side effects. Once again we went with the simplest model since it had the best AIC and not a significantly worse deviance.
+
+```{r MULTINOMIAL make model} 
 multi_mod <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
+deviance(multi_mod)
+```
+
+```{r MULTINOMIAL make df}
 
 multi_mod.df <- data.frame(model.frame(multi_mod), fitted.values(multi_mod))
 
@@ -532,7 +541,9 @@ multi_mod.long$factor.rating. <- factor(multi_mod.long$factor.rating.,
 
 multi_mod.long$as.factor.sideEffects.f <- factor(multi_mod.long$as.factor.sideEffects., 
                                           levels = c("5","4","3","2","1"))
+```
 
+```{r MULTINOMIAL plot}
 #multi.plot <- 
 multi_mod.long %>%
   ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
@@ -558,73 +569,72 @@ multi_mod.long %>%
 # ggsave(multi.plot, filename="multiplot.png")
 ```
 
-Multinomial logit model 1 and 2 not very different based on AIC (1380.239 vs 1383.26 respectively), whereas model 3 has lowest deviance but considerably higher AIC (1879.28). Could go with multi_mod, since it has lowest AIC.
+The mulitnomial model appears to be a little more decisive than the ordinal models, with most of the facets having a clear peak probability for one of the ratings. The deviance of this model is 1218.239, which is still extremely high, so this model probably isn't great for prediction.
 
-Show polr plot predicting effectiveness using side effects as predictor; how strongly do side effects predict perceived drug effectiveness?
-```{r}
-polr4.df <- data.frame(model.frame(drugs_polr4), fitted.values(drugs_polr4))
-polr4.long <- polr4.df %>% gather(factor.effectiveness., probability, X1:X5) %>% 
-  mutate(factor.effectiveness. = substring(factor.effectiveness., 2))
-polr4.long$factor.effectiveness. <- factor(polr4.long$factor.effectiveness.,
-                                           levels = c("1", "2", "3", "4", "5"))
-polr4.long$as.factor.sideEffects. <- factor(polr4.long$as.factor.sideEffects., 
-                                            levels = c("5","4","3","2","1"))
+```{r cut single model EFF}
+#Show polr plot predicting effectiveness using side effects as predictor; how strongly do side effects predict perceived drug effectiveness?
 
-#polr4.plot <- 
-polr4.long %>%
-  ggplot(aes(as.numeric(factor.effectiveness.), probability, col = as.factor.sideEffects.)) +
-  geom_line() +
-  geom_point() + 
-  facet_grid(~ as.factor.sideEffects.) +
-  xlab("Perceived Effectiveness") + ylab("Probability") + 
-  labs(title = "Ordinal Logistic Model Probabilities")+
-  guides(color = guides(col=FALSE)) + 
-  scale_colour_viridis_d() +
-  scale_x_continuous(breaks = seq(1,5,1), sec.axis = sec_axis(~.*1, "Side Effects")) + 
-  scale_y_continuous() +
-  theme(plot.subtitle = element_text(size = 8),
-        axis.text.y.right = element_blank(),
-        axis.text.x.top = element_blank(),
-        panel.background = element_blank(),
-        plot.background = element_blank(),
-        legend.background = element_blank(),
-        axis.text = element_text(size = 12)) 
+# polr4.df <- data.frame(model.frame(drugs_polr4), fitted.values(drugs_polr4))
+# polr4.long <- polr4.df %>% gather(factor.effectiveness., probability, X1:X5) %>% 
+#   mutate(factor.effectiveness. = substring(factor.effectiveness., 2))
+# polr4.long$factor.effectiveness. <- factor(polr4.long$factor.effectiveness.,
+#                                            levels = c("1", "2", "3", "4", "5"))
+# polr4.long$as.factor.sideEffects. <- factor(polr4.long$as.factor.sideEffects., 
+#                                             levels = c("5","4","3","2","1"))
+# 
+# #polr4.plot <- 
+# polr4.long %>%
+#   ggplot(aes(as.numeric(factor.effectiveness.), probability, col = as.factor.sideEffects.)) +
+#   geom_line() +
+#   geom_point() + 
+#   facet_grid(~ as.factor.sideEffects.) +
+#   xlab("Perceived Effectiveness") + ylab("Probability") + 
+#   labs(title = "Ordinal Logistic Model Probabilities")+
+#   guides(color = guides(col=FALSE)) + 
+#   scale_colour_viridis_d() +
+#   scale_x_continuous(breaks = seq(1,5,1), sec.axis = sec_axis(~.*1, "Side Effects")) + 
+#   scale_y_continuous() +
+#   theme(plot.subtitle = element_text(size = 8),
+#         axis.text.y.right = element_blank(),
+#         axis.text.x.top = element_blank(),
+#         panel.background = element_blank(),
+#         plot.background = element_blank(),
+#         legend.background = element_blank(),
+#         axis.text = element_text(size = 12)) 
 ```
 
-Show polr plot with only single predictor using Side Effects to predict Overall Satisfaction
-```{r}
-polr.se.df <- data.frame(model.frame(drugs_polr_se), fitted.values(drugs_polr_se))
-polr.se.long <- polr.se.df %>% gather(factor.rating., probability, X1:X10) %>%
-  mutate(factor.rating. = substring(factor.rating., 2))
-polr.se.long$factor.rating. <- factor(polr.se.long$factor.rating.,
-                                      levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
-polr.se.long$as.factor.sideEffects.f <- factor(polr.se.long$as.factor.sideEffects.,
-                                               levels = c("5","4","3","2","1"))
-```
+```{r cut single model SE}
+#Show polr plot predicting effectiveness using side effects as predictor; how strongly do side effects predict perceived drug effectiveness?
 
-```{r}
-#polr.se.plot <- 
-polr.se.long %>%
-  ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
-  geom_line() +
-  geom_point() + 
-  facet_grid(~ as.factor.sideEffects.f) +
-  xlab("Overall Satisfaction Rating") + ylab("Probability") + 
-  labs(title = "Ordinal Logistic Model Probabilities")+
-  guides(color = guides(col=FALSE)) + 
-  scale_colour_viridis_d() +
-  scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Side Effects")) + 
-  scale_y_continuous() +
-  theme(plot.subtitle = element_text(size = 8),
-        axis.text.y.right = element_blank(),
-        axis.text.x.top = element_blank(),
-        panel.background = element_blank(),
-        plot.background = element_blank(),
-        legend.background = element_blank(),
-        strip.background = element_blank(),
-        axis.text = element_text(size = 12)) 
-```
+# polr.se.df <- data.frame(model.frame(drugs_polr_se), fitted.values(drugs_polr_se))
+# polr.se.long <- polr.se.df %>% gather(factor.rating., probability, X1:X10) %>%
+#   mutate(factor.rating. = substring(factor.rating., 2))
+# polr.se.long$factor.rating. <- factor(polr.se.long$factor.rating.,
+#                                       levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
+# polr.se.long$as.factor.sideEffects.f <- factor(polr.se.long$as.factor.sideEffects.,
+#                                                levels = c("5","4","3","2","1"))
 
+# #polr.se.plot <- 
+# polr.se.long %>%
+#   ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
+#   geom_line() +
+#   geom_point() + 
+#   facet_grid(~ as.factor.sideEffects.f) +
+#   xlab("Overall Satisfaction Rating") + ylab("Probability") + 
+#   labs(title = "Ordinal Logistic Model Probabilities")+
+#   guides(color = guides(col=FALSE)) + 
+#   scale_colour_viridis_d() +
+#   scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Side Effects")) + 
+#   scale_y_continuous() +
+#   theme(plot.subtitle = element_text(size = 8),
+#         axis.text.y.right = element_blank(),
+#         axis.text.x.top = element_blank(),
+#         panel.background = element_blank(),
+#         plot.background = element_blank(),
+#         legend.background = element_blank(),
+#         strip.background = element_blank(),
+#         axis.text = element_text(size = 12)) 
+```
 
 ### State answers to your questions;
 
@@ -647,7 +657,6 @@ Qaseem, A., Barry, M. J., & Kansagara, D. (2016). Nonpharmacologic versus pharma
 Sansone, R. A., & Sansone, L. A. (2012). Antidepressant adherence: are patients taking their 	medications?. Innovations in Clinical Neuroscience, 9(5-6), 41-6.
 
 Won, E., Park, S. C., Han, K. M., Sung, S. H., Lee, H. Y., Paik, J. W., & Lee, K. J. (2014). 	Evidence-based, pharmacological treatment guideline for depression in Korea. Journal of 	Korean Medical Science, 29(4), 468-484.
-
 
 
 ```{r unused code}
