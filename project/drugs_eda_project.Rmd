@@ -1,23 +1,26 @@
 ---
-title: "EDA Project"
+title: "Examining Patient Evaluations of Antidepressant Drug Use and Efficacy"
 author: "Joe Stoica, Conor Devins, Geno Kim"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
-  pdf_document:
-    fig_width: 6
-    fig_height: 4
+  html_document:
+header-includes:
+  - \setlength{\parindent}{4em}
+  - \setlength{\parskip}{0em}
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, 
                       cache = TRUE, 
                       message = FALSE,
-                      warning = FALSE)
+                      warning = FALSE,
+                      fig.align = "center")
 library(tidyverse)
 library(lubridate)
 library(ggthemes)
 library(ggmosaic)
 library(VGAM)
+library(kableExtra)
 ```
 
 
@@ -26,131 +29,69 @@ library(VGAM)
 theme_set(theme_fivethirtyeight() + theme(axis.title = element_text()))
 ```
 
+# Introduction
+
+According to the 2015 report “Depression and Other Common Mental Disorders: Global Health Estimates” by the World Health Organization, depression is the leading cause of disability and burden of disease worldwide. Evidence-based guidelines generally recommend that second-generation antidepressants (e.g. selective serotonin reuptake inhibitors and selective norepinephrine reuptake inhibitors)—in conjunction with psychotherapy—be taken as the first line of treatment for depression (Anderson et al., 2008; Qaseem, Barry, & Kansagara, 2016; Won et al., 2014). Given the considerably large array of existing pharmacological treatment options for depression and heterogeneity in risk/benefit trade-offs thereof, it is worth examining critical aspects of patients’ subjective treatment experiences across a representative sample of the antidepressant drug landscape.
+
+Research indicates that efforts to maximize treatment benefits for patients with psychiatric illnesses are hampered by poor adherence to prescribed medications (McDonald, Garg, & Haynes, 2002). Among the many different patient factors known to affect adherence to psychiatric treatment (e.g. patient beliefs, stigmas, cost, fears of addiction, etc.), adverse drug side effects are commonly reported as a reason for reluctance to accept or continue pharmacological treatment programs (Fortney et al., 2011; Sansone & Sansone, 2012).  
+
+***
+
 # Statement of goals.
-## What questions are you trying to address? 
-Some preliminary questions 
 
-### 1.	What is the relationship between perceived side effects and overall satisfaction? 
+1.	What is the relationship between perceived effectiveness, perceived side effects and overall satisfaction? 
 
-### 2.	What is the relationship between perceived effectiveness and overall satisfaction? 
-
-### 3.	What is the relation between perceived side effects and perceived effectiveness? 
-#### a.	Though intuitively one may assume that more severe side effects would be associated with lower perceived effectiveness, it is also possible that effectiveness-sideeffect trade-offs are nonetheless perceived as a net benefit to the patient (where perceived benefits of the drug for daily life quality outweigh their negative side effects). Are there certain classes of drugs or specific drugs where the  relationships are different or does it hold true across all drugs?
-
-### 4. What is the breakdown of the types of drugs used for treating depression (or other mood disorders).
-
-#### a. This can be a simple bar chart showing the relative proportions of serotonin-reuptake inhibiting drugs (SRIs), norepinephrine-mechanism drugs (NRIs), Amphetamines (AMP), etc…
-
-### 5. How do certain classes of drugs compare in terms of their perceived side effects, effectiveness and overall satisfaction?
-
-#### a. SRIs and NRIs are probably the most popular of options, but are they actually superior along   these dimensions of perception? 
-
-#### b. Can probably do Multinomial regression to address this question; if we do this, may be worth excluding some drug classes that have very few cases, and focusing on those classes that represent a  sizeable portion of the data. These analyses are covered in Lecture 25, slide 28. 
-
+2.	What is the relation between perceived side effects and perceived effectiveness? 
 
 ## Why do you care?   
+TODO
 
 ## Why should we care?
+TODO
+
+***
 
 # Description of your data.
-## In addition to graphical displays, this should include verbal descriptions of what your variables are, who the individuals in your data from, and how they were selected/sampled. If you have many variables, you don’t have to describe all of them, just pick out some key ones.
-
-The data we chose to use is the Drug Review Dataset from the UCI Machine Learning
-Repository. The data focuses on pharmaceutical drug users ratings and reviews of
-certain drugs they've taken. 
-
-The data was compiled by gathering the reviews from druglib.com, which is "a
-comprehensive drug database organized by relevance to specific drugs." (TODO make footnote for http://www.druglib.com/). It allows people who have used a specific drug to rate 
-the drug based on their experience. 
-
-(TODO explain how we removed people and have that code)
-
-(TODO change observations #) Our data has five columns with 369 different observations:
-
-DrugName: the name of the drug
-
-Satisfaction: Rating (10-point scale, 10 being highest satisfaction)
-
-Effectiveness:
-1 - Ineffective
-2 - Marginally Effective
-3 - Moderately Effective
-4 - Considerably Effective
-5 - Highly Effective
-
-
-Side Effects: 
-1 - Extremely Severe Side Effects
-2 - Severe Side Effects
-3 - Moderate Side Effects
-4 - Mild Side Effects
-5 - No Side Effects
-
-Type: Chemical type of the drug  
-
-# Answering your questions.
-## This is the most important criterion. It will probably include (but is not limited to) fitting a statistical model or models of some kind, and showing that these models tell you something of interest. You should do the following (not necessarily in this order):
-
-(TODO what's our main question)
-
 
 ```{r data import}
 # From https://archive.ics.uci.edu/ml/datasets/Drug+Review+Dataset+%28Druglib.com%29#
-#drugs <- read_csv("drugData.csv")
 drugs_test <- read_csv(file = 'drugLibTest_raw.csv')
 drugs_train <- read_csv(file = 'drugLibTrain_raw.csv')
 drugs <- rbind(drugs_test, drugs_train) %>% as.tibble() 
 ```
 
-1. filter all rows for which the condition is for anything related to “depression”
-so basically just look for the string “depression” in that column where condition is listed.
-this includes depression + any other comorbidities
-2. delete the comments column where people describe their experience w/ the drug etc.
-3. for the drug names (e.g. lexapro etc.) any drug that has a hyphenated add-on such as drugname-xr or whatever, just remove that hyphenated part so you’re just left with “drugname”, for the simplicity we’re gonna ignore different versions of the same drug (paxil-xr vs paxil)
-just treat paxil-xr as belonging to paxil
+```{r sentiment}
+# df_sent <- drugs %>%
+#   filter(str_detect(condition, 'epress')) %>%
+#   select(-c(sideEffectsReview, commentsReview, X1, condition)) %>% 
+#   # recode likert to 1-5 scale 
+#   mutate(effectiveness = case_when(
+#     effectiveness == "Highly Effective" ~ 5,
+#     effectiveness == "Marginally Effective" ~ 2, 
+#     effectiveness == "Moderately Effective" ~ 3, 
+#     effectiveness == "Considerably Effective" ~ 4,
+#     TRUE ~ 1)) %>% 
+#   mutate(sideEffects = case_when(
+#     sideEffects == "Extremely Severe Side Effects" ~ 1, 
+#     sideEffects == "Severe Side Effects" ~ 2, 
+#     sideEffects == "Moderate Side Effects" ~ 3, 
+#     sideEffects == "Mild Side Effects" ~ 4, 
+#     TRUE ~ 5)) %>% 
+#   mutate(urlDrugName = case_when(
+#     urlDrugName == "wellbutrin-xl" ~ "wellbutrin",
+#     urlDrugName == "wellbutrin-sr" ~ "wellbutrin",
+#     urlDrugName == "paxil-cr" ~ "paxil",
+#     urlDrugName == "effexor-xr" ~ "effexor",
+#     TRUE ~ urlDrugName
+#   ))
+# names(df_sent)[1] <- "drug"
+# colnames(drugs)
 
-and finally, the column that i added but was not part of the original data set was drug pharmacology (e.g. SRI, NRI, Amphetamines, etc.)
-
-i basically had to manually make a table of contents for which family each drug name belonged to
-but u won’t need to since you can find out that grouping from the csv file i uploaded
-all those steps summarize what was done to get the data in the form it is now.
-
-install.packages('SentimentAnalysis')
-library(SentimentAnalysis)
-
-```{r}
-df_sent <- drugs %>%
-  filter(str_detect(condition, 'epress')) %>%
-  select(-c(sideEffectsReview, commentsReview, X1, condition)) %>% 
-  # recode likert to 1-5 scale 
-  mutate(effectiveness = case_when(
-    effectiveness == "Highly Effective" ~ 5,
-    effectiveness == "Marginally Effective" ~ 2, 
-    effectiveness == "Moderately Effective" ~ 3, 
-    effectiveness == "Considerably Effective" ~ 4,
-    TRUE ~ 1)) %>% 
-  mutate(sideEffects = case_when(
-    sideEffects == "Extremely Severe Side Effects" ~ 1, 
-    sideEffects == "Severe Side Effects" ~ 2, 
-    sideEffects == "Moderate Side Effects" ~ 3, 
-    sideEffects == "Mild Side Effects" ~ 4, 
-    TRUE ~ 5)) %>% 
-  mutate(urlDrugName = case_when(
-    urlDrugName == "wellbutrin-xl" ~ "wellbutrin",
-    urlDrugName == "wellbutrin-sr" ~ "wellbutrin",
-    urlDrugName == "paxil-cr" ~ "paxil",
-    urlDrugName == "effexor-xr" ~ "effexor",
-    TRUE ~ urlDrugName
-  ))
-names(df_sent)[1] <- "drug"
-colnames(drugs)
-```
-```{r}
-getSent = function(review) {
-  sentiment <- analyzeSentiment(review)
-  sentBinary <- convertToBinaryResponse(sentiment)$SentimentGI
-  return(as.character(sentBinary))
-}
+# getSent = function(review) {
+#   sentiment <- analyzeSentiment(review)
+#   sentBinary <- convertToBinaryResponse(sentiment)$SentimentGI
+#   return(as.character(sentBinary))
+# }
 
 # This takes really long to execute so leave commented out. 
 # for(i in 1:nrow(df_sent)){
@@ -185,10 +126,7 @@ df <- drugs %>%
     TRUE ~ urlDrugName
   ))
 names(df)[1] <- "drug"
-colnames(drugs)
-```
 
-```{r make drug table}
 SRI_list <- c("Celexa",
               "Citalopram",
               "Lexapro",
@@ -236,17 +174,117 @@ type_list <- c(rep("AAP", 3), rep("AMP", 4), rep("BNZ", 4), rep("MISC", 12), rep
                rep("NRI", 6), rep("OPD", 2), rep("SRI", 10), rep("TCA", 3))
 drug_list <- c(AAP_list, AMP_list, BNZ_list, MISC_list, MOAI_list, NRI_list, OPD_list, SRI_list, TCA_list)
 drug_table <- data.frame(drug = tolower(drug_list), type = type_list)
+
 # join drug data with drug type
 df <- df %>% left_join(drug_table, by = "drug")
+
 df <- df %>% 
   mutate(type = ifelse(type %in% c("SRI", "NRI"), as.character(type), "Other"))
 ```
 
 
-```{r }
-letter_size = 14
+The data we chose to use is the Drug Review Dataset from the UCI Machine Learning
+Repository. The data focuses on pharmaceutical drug users ratings and written reviews of
+certain drugs they've taken. 
 
-side_satis_plot <- df %>% 
+The data was initially compiled by gathering the user reviews from druglib.com, which is "a
+comprehensive drug database organized by relevance to specific drugs." (TODO make footnote for http://www.druglib.com/). It allows people who have used a specific drug to rate 
+the drug based on their experience, just like a user can review a product from Amazon.
+
+Since we are primarily concerned with people diagnosed with depression, we filtered
+out every user that did not state they had depressions in the self-reported condition. That cut out about
+88% of the data, and left us with 499 observations. We then removed the user typed
+reviews, so were only left with the following columns:
+
+***
+
+**DrugName**: the name of the drug
+
+**Satisfaction**: Rating (10-point scale, 10 being highest satisfaction)
+
+**Effectiveness**:
+1 - Ineffective;
+2 - Marginally Effective;
+3 - Moderately Effective;
+4 - Considerably Effective;
+5 - Highly Effective
+
+**Side Effects**: 
+1 - Extremely Severe Side Effects;
+2 - Severe Side Effects;
+3 - Moderate Side Effects;
+4 - Mild Side Effects;
+5 - No Side Effects
+
+**Type**: Chemical type of the drug 
+
+***
+
+Here is a snapshot of our data
+
+```{r}
+head(df %>% select(1:5)) %>% kable() %>% kable_styling()
+```
+
+
+We also simplified drug names when necessary. We simplified "wellbutrin-XL" to just "wellbutrin" because it's the same drug, just higher dosage. The drug type falls into three categories: SRI, NRI, and other. The first two target different chemical receptors in the brain to treat depression. The other category contains seven other drug families, but we condensed them all because their individual counts are so low. These were added independently and were not found in the original data. We also recoded the Likert ratings to be numerical instead of strings for making data manipulation simpler.
+
+*** 
+
+# Answering Our Questions.
+
+## Simple EDA
+
+We wanted to familiarize ourselves with our data by getting a general sense of the relationships between our variables. 
+
+```{r bar chart for counts}
+temp <- df %>% 
+  filter(type %in% c("SRI", "NRI")) %>% 
+  select(drug, type) %>% 
+  group_by(drug, type) %>% 
+  count() %>% 
+  ungroup()
+
+# vec <- temp %>% 
+#   arrange(n) %>% 
+#   select(drug)
+# dput(vec)
+
+# I got it from the vec output, this is ugly 
+temp$drug = factor(temp$drug, levels = c("concerta", "desyrel", "serzone", "symbyax", "trazodone", "pristiq", "sarafem", "celexa", "citalopram", "cymbalta",  "zoloft", "paxil", "prozac", "lexapro", "effexor", "wellbutrin"))
+
+temp %>% 
+  ggplot(aes(drug, n)) +
+  geom_bar(stat = "identity") + 
+  coord_flip() + 
+  facet_wrap(.~type, scales = "free") +
+  theme(panel.grid.major.y = element_blank()) +
+  ylab("Count") +
+  xlab("Drug Brand Name") + 
+  labs(title = "Which Drugs are Reviewed Most in NRI and SRI Groups?") +
+  theme_fivethirtyeight()
+```
+
+Here we see counts for each drug in their respective drug family type. We didn't include the other column because it has a large amount of different drugs that make up such a small proprotion of the overall data. The SRI group has a few more drugs than NRI, NRI has two drugs that are more frequent than the most frequent SRI drug. 
+
+```{r cut BAR.C drug type}
+# df %>%
+#   group_by(type) %>%
+#   count() %>%
+#   ggplot(aes(as.factor(type),n)) + 
+#   geom_bar(stat = "identity") +
+#   #theme_light(base_size = 20) +
+#   theme(panel.grid.major.x = element_blank()) +
+#   ylab("Count") +
+#   xlab("Drug Classification") 
+```
+
+### Satisfaction Measured Against Side Effects and Effectiveness
+
+Next we examined how the users' overall satisfaction are related to the users' reported side effects and effectiveness levels.
+
+```{r STACK BAR SE SATIS}
+df %>%
   ggplot(aes(factor(sideEffects), fill = factor(rating))) +
   geom_bar(position = "fill") +
   theme(legend.position = "top",
@@ -254,39 +292,22 @@ side_satis_plot <- df %>%
         panel.background = element_blank(),
         plot.background = element_blank(),
         legend.background = element_blank(),
-        axis.text = element_text(size = letter_size),
-        axis.title = element_blank()) +
-  guides(fill = FALSE) +
+        plot.subtitle = element_text(size = 8, color = "black")) +
+  guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
   ylab("Proportion") +
-  xlab("Side Effects Ratings") + 
+  xlab("Side Effects Ratings") +
   coord_flip() +
-  ggtitle("Drug Side Effects Ratings and Overall Satisfaction")+
+  labs(title = "Drug Side Effects Ratings and Overall Satisfaction",
+       subtitle = "1 - Extremely Severe, 2 - Severe, 3 - Moderate, 4 - Mild, 5 - None")+
   scale_fill_viridis_d()
 
-# For the report, use the one below
-# df %>% 
-#   ggplot(aes(factor(sideEffects), fill = factor(rating))) +
-#   geom_bar(position = "fill") +
-#   theme(legend.position = "top",
-#         legend.direction = "horizontal",
-#         panel.background = element_blank(),
-#         plot.background = element_blank(),
-#         legend.background = element_blank()) +
-#   guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
-#   ylab("Proportion") +
-#   xlab("Side Effects Ratings") + 
-#   coord_flip() +
-#   ggtitle("Drug Side Effects Ratings and Overall Satisfaction")+
-#   scale_fill_viridis_d()
-
-ggsave(side_satis_plot, filename = "side_satis_plot.png", height = 9, width = 16)
+# ggsave(side_satis_plot, filename = "side_satis_plot.png", height = 9, width = 16)
 ```
 
-The above plot shows that the worse the side effects are, the least satisfied the
-subjects were. (TODO more explanation maybe)
+The plot revelas that the worse the side effects are, the least satisfied the subjects were. This generally makes a lot of sense because people who are already feeling bad and are taking medications to mitigate their ailments most likely don't like feeling additionally worse. It's interesting to see how over half of the users reporting no side efects rate the drug 10/10, while almost 80% of users with extremely severe side effects have a satisfaction level of 1.
 
-```{r}
-satis_perc <- df %>% 
+```{r STACK BAR EFF SATIS}
+df %>%
   ggplot(aes(effectiveness, fill = factor(rating))) +
   geom_bar(position = "fill") +
   theme(legend.position = "top",
@@ -294,73 +315,20 @@ satis_perc <- df %>%
         plot.subtitle = element_text(size = 8, color = "black"),
         panel.background = element_blank(),
         plot.background = element_blank(),
-        legend.background = element_blank(),
-        axis.text = element_text(size = letter_size),
-        axis.title = element_blank()) +
+        legend.background = element_blank()) +
   guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
   ylab("Proportion") +
-  xlab("Effectiveness") + 
+  xlab("Effectiveness") +
   labs(title = "How Drugs Effectiveness Affects Satisfaction",
        subtitle = "1 - Ineffective, 2 - Marginally Effective, 3 - Moderately Effective, 4 - Considerably Effective, 5 - Highly Effective") +
-  coord_flip() + 
-  scale_fill_viridis_d() +
-  ggtitle("Perceived Drug Effectiveness and Overall Satisfaction") 
-
-# satis_perc <- df %>% 
-#   ggplot(aes(effectiveness, fill = factor(rating))) +
-#   geom_bar(position = "fill") +
-#   theme(legend.position = "top",
-#         legend.direction = "horizontal",
-#         plot.subtitle = element_text(size = 8, color = "black"),
-#         panel.background = element_blank(),
-#         plot.background = element_blank(),
-#         legend.background = element_blank(),
-#         axis.text = element_text(size = letter_size),
-#         axis.title = element_text(size = letter_size)) +
-#   guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
-#   ylab("Proportion") +
-#   xlab("Effectiveness") + 
-#   labs(title = "How Drugs Effectiveness Affects Satisfaction",
-#        subtitle = "1 - Ineffective, 2 - Marginally Effective, 3 - Moderately Effective, 4 - Considerably Effective, 5 - Highly Effective") +
-#   coord_flip() + 
-#   scale_fill_viridis_d() +
-#   ggtitle("Perceived Drug Effectiveness and Overall Satisfaction")
-
-ggsave(satis_perc, filename = "satis_perc.png", height = 9, width = 16)
-```
-The above plot shows that the more effective, the more satisfied the
-subjects were. (TODO more explanation maybe)
-
-```{r}
-side_effects_perc <- df %>%
-  ggplot(aes(effectiveness, fill = factor(sideEffects))) +
-  geom_bar(position = "fill") + 
-  theme(legend.position = "top",
-        legend.direction = "horizontal",
-        panel.background = element_blank(),
-        plot.background = element_blank(),
-        legend.background = element_blank(),
-        axis.text = element_text(size = letter_size),
-        axis.title = element_text(size = letter_size)) +
-  guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
-  ylab("Proportion") +
-  xlab("Effectiveness") + 
   coord_flip() +
-  ggtitle("Perceived Drug Effectiveness and Side Effects") +
-  scale_fill_viridis_d()
+  scale_fill_viridis_d() +
+  ggtitle("Perceived Drug Effectiveness and Overall Satisfaction")
 
-ggsave(side_effects_perc, filename = "side_effects_perc.png")
+#ggsave(satis_perc, filename = "satis_perc.png", height = 9, width = 16)
 ```
 
-### State answers to your questions;
-
-### Describe how you came to these answers;
-
-### Explore the implications to your answers. For example, if your answer is a non-trivial model, plot the fit and describe what’s going on in words.
-
-# Identification of work left to do/limitations.
-## It’s EDA, so we don’t require perfection. However, you should have a clear idea of what the imperfections in your work are (what doesn’t fit  well?   what  other  variables  would  you  really want  to  know?),  and  how  they  could potentially be addressed.
-
+The above plot shows that the more effective the drug was, the more satisfied the users were. The response proportions are not as extreme as side effects although. It is worth mentioning that it is a possibility that users have a tendency to select the most extreme values, and it calls into account how accurate a Likert variable can truly be due to its subjective nature. 
 
 ```{r make mosiac df}
 # Set up data frame for mosaic plots
@@ -373,7 +341,9 @@ names(x) = c("type", "rating_type", "given_score", "count")
 x$type = factor(x$type, levels = c("NRI", "SRI", "Other"))
 ```
 
-```{r drug type mosaic}
+```{r MOSAIC satisfaction by type}
+# keep
+
 # Mosaic plot of user overall satisfaction with drug by drug type (SRI vs NRI)
 x %>%
   filter(rating_type %in% c("rating")) %>%
@@ -398,8 +368,13 @@ x %>%
   ggtitle("Overall Satsifaction By Drug Type")
 ```
 
+This mosaic plot shows that for the most part the three groups are fairly similar in terms of rating. The differences might be attributed to just random chance. 
+
+
 Mosaic plot of user ratings of drug effectiveness and side effects by drug type (SRI vs NRIs)
-```{r mosaic}
+```{r MOSAIC for SE and EFF} 
+# keep
+
 x %>% 
   ungroup() %>% 
   filter(rating_type %in% c("effectiveness", "sideEffects")) %>% 
@@ -428,116 +403,82 @@ x %>%
   ggtitle("Ratings of Effectiveness & Side Effects Across Drug Types")
 ```
 
-```{r}
-df %>%
-  group_by(type) %>%
-  count() %>%
-  ggplot(aes(as.factor(type),n)) + 
-  geom_bar(stat = "identity") +
-  #theme_light(base_size = 20) +
-  theme(panel.grid.major.x = element_blank()) +
-  ylab("Count") +
-  xlab("Drug Classification") 
+In the same vein, the three drug types perform fairly, with some slight variations that are difficult to distinguish whether the differences can be attributed to randomness or not.s
+
+```{r cut 3WAY SCATTER}
+# df %>% 
+#   ggplot(aes(effectiveness, sideEffects, color = factor(rating))) +
+#   geom_jitter(alpha = 0.6, width = 0.15, height = 0.15) +
+#   # faceting doesn't really offer any additional insight
+#   #facet_grid(.~type) +
+#   xlab("Effectiveness Rating") +
+#   ylab("Side Effects Rating") +
+#   labs(color = "User Rating") +
+#   scale_color_viridis_d() + 
+#   theme(legend.position = "right",
+#         legend.direction = "vertical",
+#         legend.key = element_blank(),
+#         plot.title = element_text(size=14),
+#         panel.background = element_blank(),
+#         plot.background = element_blank(),
+#         legend.background = element_blank(),
+#         axis.text = element_text(size = 16)) +
+#   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2)),
+#          reverse = TRUE) +
+#   ggtitle("Effectiveness and Side Effects Rating with Overall User Rating")
 ```
 
-```{r scatter plot}
+```{r 3WAY heatmap}
 df %>% 
-  ggplot(aes(effectiveness, sideEffects, color = factor(rating))) +
-  geom_jitter(alpha = 0.4, width = 0.1, height = 0.1) +
-  # faceting doesn't really offer any additional insight
-  #facet_grid(.~type) +
+  ggplot(aes(effectiveness, sideEffects, fill = rating)) +
+  geom_tile() + 
   xlab("Effectiveness Rating") +
   ylab("Side Effects Rating") +
   labs(color = "User Rating") +
   scale_color_viridis_d() + 
   theme(legend.position = "right",
         legend.direction = "vertical",
+        legend.key = element_blank(),
         plot.title = element_text(size=14),
         panel.background = element_blank(),
         plot.background = element_blank(),
         legend.background = element_blank(),
-        axis.text = element_text(size = 16)) +
+        axis.text = element_text(size = 16),
+        panel.grid.major = element_blank()) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2)),
          reverse = TRUE) +
-  ggtitle("Effectiveness and Side Effects Rating with Overall User Rating")
+  ggtitle("Effectiveness and Side Effects Rating with Overall User Satisfaction") + 
+  guides(fill = guide_legend(title = "Satisfaction")) +
+  scale_fill_viridis_c()
 ```
 
-```{r bar chart for counts}
-temp <- df %>% 
-  filter(type %in% c("SRI", "NRI")) %>% 
-  select(drug, type) %>% 
-  group_by(drug, type) %>% 
-  count() %>% 
-  ungroup()
+This heatmap shows how side effects and effectiveness are related to how satisfied the user is with their medication. There appears to be a trend that as effectiveness  increases and side effects get less severe that satisfaction increases, however it is far from perffect. When effectiveness is four and side effects is three, the heatmap value is extremely low.  
 
-# vec <- temp %>% 
-#   arrange(n) %>% 
-#   select(drug)
-# dput(vec)
+## Model Creation 
 
-# I got it from the vec output, this is ugly 
-temp$drug = factor(temp$drug, levels = c("concerta", "desyrel", "serzone", "symbyax", "trazodone", "pristiq", "sarafem", "celexa", "citalopram", "cymbalta",  "zoloft", "paxil", "prozac", "lexapro", "effexor", "wellbutrin"))
+We wanted to fit some models using our data to try and see if we could gain any more insight into how user satsifaction can be predicted using our drug data. The first model we looked at was an ordered logistic regression since our response variable in on a scale from 1 to 10. I created three models, which each model using side effects and effectiveness as predictors. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest AIC, which is a statistic produced from the model output used to compare against models. So even though it doesnt have the lowest residual deviance out of three models, it is the most interpretable model and lowest AIC, so we'll use that.
 
-temp %>% 
-  ggplot(aes(drug, n)) +
-  geom_bar(stat = "identity") + 
-  coord_flip() + 
-  facet_wrap(.~type, scales = "free") +
-  ylab("Count") +
-  xlab("Drug Brand Name") + 
-  ggtitle("Which Drugs are Reviewed Most in NRI and SRI Groups?") +
-  theme(plot.title = element_text(size = 14),
-        panel.grid.major.y = element_blank()) 
-```
-
-```{r model creation}
+```{r ORDINAL LOGISTIC model creation}
 df <- df %>% as.tibble()
+
+# side effects
 drugs_polr_se <- MASS::polr(factor(rating) ~ as.factor(sideEffects), data = df)
+
+# effectiveness
 drugs_polr_eff <- MASS::polr(factor(rating) ~ as.factor(effectiveness), data = df)
+
+
 drugs_polr <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df)
 
 drugs_polr4 <- MASS::polr(factor(effectiveness) ~ as.factor(sideEffects), data = df)
 
 drugs_polr2 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df)
 
-drugs_polr2 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df)
-
 drugs_polr3 <- MASS::polr(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(drug), data = df)
 ```
 
-I created three models all trying to predict rating. They all have side effects and effectiveness. The first model only uses those two, the second model takes into consideration drug type, and the third model takes into consideration the drug itself. The first model has the lowest Akaike information criterion (AIC). "[It] is an estimator of the relative quality of statistical models for a given set of data. Given a collection of models for the data, AIC estimates the quality of each model, relative to each of the other models. Thus, AIC provides a means for model selection.(stolen from wikipedia (https://en.wikipedia.org/wiki/Akaike_information_criterion)". So even though it doesnt have the lowest residual deviance, it is still the best model to use. Adding the sentiment analysis might improve it, however. 
-
-Show polr plot with only single predictor using Side Effects to predict Overall Satisfaction
 ```{r}
-polr.se.df <- data.frame(model.frame(drugs_polr_se), fitted.values(drugs_polr_se))
-polr.se.long <- polr.se.df %>% gather(factor.rating., probability, X1:X10) %>%
-  mutate(factor.rating. = substring(factor.rating., 2))
-polr.se.long$factor.rating. <- factor(polr.se.long$factor.rating.,
-                                      levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
-polr.se.long$as.factor.sideEffects.f <- factor(polr.se.long$as.factor.sideEffects.,
-                                               levels = c("5","4","3","2","1"))
-polr.se.plot <- polr.se.long %>%
-  ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
-  geom_line() +
-  geom_point() + 
-  facet_grid(~ as.factor.sideEffects.f) +
-  xlab("Overall Satisfaction Rating") + ylab("Probability") + 
-  labs(title = "Ordinal Logistic Model Probabilities")+
-  guides(color = guides(col=FALSE)) + 
-  scale_colour_viridis_d() +
-  scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Side Effects")) + 
-  scale_y_continuous() +
-  theme(plot.subtitle = element_text(size = 8),
-        axis.text.y.right = element_blank(),
-        axis.text.x.top = element_blank(),
-        panel.background = element_blank(),
-        plot.background = element_blank(),
-        legend.background = element_blank(),
-        axis.text = element_text(size = 12)) 
-```
-
-
-```{r}
+# tidying data to plot nicely
 drugs.polr.df <- data.frame(model.frame(drugs_polr), fitted.values(drugs_polr))
 
 drugs.polr.long <- drugs.polr.df %>% gather(factor.rating., probability, X1:X10) %>% 
@@ -549,7 +490,8 @@ drugs.polr.long$factor.rating. <- factor(drugs.polr.long$factor.rating.,
 drugs.polr.long$as.factor.sideEffects.f <- factor(drugs.polr.long$as.factor.sideEffects., 
                                                   levels = c("5","4","3","2","1"))
 
-ordinal.plot <- drugs.polr.long %>%
+#ordinal.plot <- 
+drugs.polr.long %>%
   ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
   geom_line() +
   geom_point() + 
@@ -566,9 +508,53 @@ ordinal.plot <- drugs.polr.long %>%
         panel.background = element_blank(),
         plot.background = element_blank(),
         legend.background = element_blank(),
-        axis.text = element_text(size = 12)) 
+        axis.text = element_text(size = 12),
+        strip.background = element_blank()) 
+
 #ggsave(ordinal.plot, filename="ordinal_plot.png")
 ```
+
+Multinomial Logit Model #1 (2 predictors): SatisfactionRating ~ Effectiveness + SideEffects
+```{r}
+multi_mod <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
+
+multi_mod.df <- data.frame(model.frame(multi_mod), fitted.values(multi_mod))
+
+multi_mod.long <- multi_mod.df %>% gather(factor.rating., probability, X1:X10) %>% 
+  mutate(factor.rating. = substring(factor.rating., 2))
+
+multi_mod.long$factor.rating. <- factor(multi_mod.long$factor.rating., 
+                                 levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
+
+multi_mod.long$as.factor.sideEffects.f <- factor(multi_mod.long$as.factor.sideEffects., 
+                                          levels = c("5","4","3","2","1"))
+
+#multi.plot <- 
+multi_mod.long %>%
+  ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
+  geom_line() +
+  geom_point() + 
+  facet_grid(as.factor.sideEffects.f ~ as.factor.effectiveness.) +
+  xlab("Overall Satisfaction Rating") + ylab("Probability") + 
+  labs(title = "Multinomial Logistic Model Probabilities")+
+  guides(color = guides(col=FALSE)) + 
+  scale_colour_viridis_d() +
+  scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Effectiveness")) + 
+  scale_y_continuous(sec.axis = sec_axis(~.*1, "Side Effects")) +
+  theme(plot.subtitle = element_text(size = 8),
+        axis.text.y.right = element_blank(),
+        axis.text.x.top = element_blank(),
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        axis.text = element_text(size = 12),
+        strip.background = element_blank()
+  ) 
+
+# ggsave(multi.plot, filename="multiplot.png")
+```
+
+Multinomial logit model 1 and 2 not very different based on AIC (1380.239 vs 1383.26 respectively), whereas model 3 has lowest deviance but considerably higher AIC (1879.28). Could go with multi_mod, since it has lowest AIC.
 
 Show polr plot predicting effectiveness using side effects as predictor; how strongly do side effects predict perceived drug effectiveness?
 ```{r}
@@ -580,7 +566,8 @@ polr4.long$factor.effectiveness. <- factor(polr4.long$factor.effectiveness.,
 polr4.long$as.factor.sideEffects. <- factor(polr4.long$as.factor.sideEffects., 
                                             levels = c("5","4","3","2","1"))
 
-polr4.plot <- polr4.long %>%
+#polr4.plot <- 
+polr4.long %>%
   ggplot(aes(as.numeric(factor.effectiveness.), probability, col = as.factor.sideEffects.)) +
   geom_line() +
   geom_point() + 
@@ -600,64 +587,51 @@ polr4.plot <- polr4.long %>%
         axis.text = element_text(size = 12)) 
 ```
 
-
+Show polr plot with only single predictor using Side Effects to predict Overall Satisfaction
 ```{r}
-recode = function(x) {
-  if(x < 3) {
-    return("Poor")
-  } else if(x == 3 | x == 4) {
-    return("Fair")
-  } else {
-    return("Excellent")
-  }
-}
-
-df2 <- df
-for(i in 1:nrow(df2)) {
-  #df2$effectiveness[i] = recode(df2$effectiveness[i])
-  df2$sideEffects[i] = recode(df2$sideEffects[i])
-}
+polr.se.df <- data.frame(model.frame(drugs_polr_se), fitted.values(drugs_polr_se))
+polr.se.long <- polr.se.df %>% gather(factor.rating., probability, X1:X10) %>%
+  mutate(factor.rating. = substring(factor.rating., 2))
+polr.se.long$factor.rating. <- factor(polr.se.long$factor.rating.,
+                                      levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
+polr.se.long$as.factor.sideEffects.f <- factor(polr.se.long$as.factor.sideEffects.,
+                                               levels = c("5","4","3","2","1"))
 ```
 
-Multinomial Logit Model #1 (2 predictors): SatisfactionRating ~ Effectiveness + SideEffects
 ```{r}
-m1 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects), data = df, family = "multinomial")
-
-m1.df <- data.frame(model.frame(m1), fitted.values(m1))
-
-m1.long <- m1.df %>% gather(factor.rating., probability, X1:X10) %>% 
-  mutate(factor.rating. = substring(factor.rating., 2))
-
-m1.long$factor.rating. <- factor(m1.long$factor.rating., 
-                                 levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
-
-m1.long$as.factor.sideEffects.f <- factor(m1.long$as.factor.sideEffects., 
-                                          levels = c("5","4","3","2","1"))
-
-multi.plot <- m1.long %>%
+#polr.se.plot <- 
+polr.se.long %>%
   ggplot(aes(as.numeric(factor.rating.), probability, col = as.factor.sideEffects.f)) +
   geom_line() +
   geom_point() + 
-  facet_grid(as.factor.sideEffects.f ~ as.factor.effectiveness.) +
+  facet_grid(~ as.factor.sideEffects.f) +
   xlab("Overall Satisfaction Rating") + ylab("Probability") + 
-  labs(title = "Multinomial Logistic Model Probabilities")+
+  labs(title = "Ordinal Logistic Model Probabilities")+
   guides(color = guides(col=FALSE)) + 
   scale_colour_viridis_d() +
-  scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Effectiveness")) + 
-  scale_y_continuous(sec.axis = sec_axis(~.*1, "Side Effects")) +
+  scale_x_continuous(breaks = seq(0,10,2), sec.axis = sec_axis(~.*1, "Side Effects")) + 
+  scale_y_continuous() +
   theme(plot.subtitle = element_text(size = 8),
         axis.text.y.right = element_blank(),
         axis.text.x.top = element_blank(),
         panel.background = element_blank(),
         plot.background = element_blank(),
         legend.background = element_blank(),
+        strip.background = element_blank(),
         axis.text = element_text(size = 12)) 
-
-# ggsave(multi.plot, filename="multiplot.png")
 ```
 
 
-```{r failed models}
+### State answers to your questions;
+
+### Describe how you came to these answers;
+
+### Explore the implications to your answers. For example, if your answer is a non-trivial model, plot the fit and describe what’s going on in words.
+
+# Identification of work left to do/limitations.
+
+
+```{r unused code}
 #Multinomial Logit Model #2 (3 Predictors): SatisfactionRating ~ Effectiveness + SideEffects + DrugType
 # m2 <- VGAM::vglm(factor(rating) ~ as.factor(effectiveness) + as.factor(sideEffects) + as.factor(type), data = df, family = "multinomial")
 # 
@@ -714,7 +688,77 @@ multi.plot <- m1.long %>%
 #   guides(color = FALSE) + 
 #   scale_color_viridis_d() +
 #   scale_x_continuous(breaks = seq(0,10,2))
+
+# satis_perc <- df %>% 
+#   ggplot(aes(effectiveness, fill = factor(rating))) +
+#   geom_bar(position = "fill") +
+#   theme(legend.position = "top",
+#         legend.direction = "horizontal",
+#         plot.subtitle = element_text(size = 8, color = "black"),
+#         panel.background = element_blank(),
+#         plot.background = element_blank(),
+#         legend.background = element_blank(),
+#         axis.text = element_text(size = letter_size),
+#         axis.title = element_blank()) +
+#   guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
+#   ylab("Proportion") +
+#   xlab("Effectiveness") + 
+#   labs(title = "How Drugs Effectiveness Affects Satisfaction",
+#        subtitle = "1 - Ineffective, 2 - Marginally Effective, 3 - Moderately Effective, 4 - Considerably Effective, 5 - Highly Effective") +
+#   coord_flip() + 
+#   scale_fill_viridis_d() +
+#   ggtitle("Perceived Drug Effectiveness and Overall Satisfaction") 
+
+# side_satis_plot <- df %>% 
+#   ggplot(aes(factor(sideEffects), fill = factor(rating))) +
+#   geom_bar(position = "fill") +
+#   theme(legend.position = "top",
+#         legend.direction = "horizontal",
+#         panel.background = element_blank(),
+#         plot.background = element_blank(),
+#         legend.background = element_blank(),
+#         axis.text = element_text(size = letter_size),
+#         axis.title = element_blank()) +
+#   guides(fill = FALSE) +
+#   ylab("Proportion") +
+#   xlab("Side Effects Ratings") + 
+#   coord_flip() +
+#   ggtitle("Drug Side Effects Ratings and Overall Satisfaction")+
+#   scale_fill_viridis_d()
+
+# For the report, use the one below
+
+recode = function(x) {
+  if(x < 3) {
+    return("Poor")
+  } else if(x == 3 | x == 4) {
+    return("Fair")
+  } else {
+    return("Excellent")
+  }
+}
+
+df2 <- df
+for(i in 1:nrow(df2)) {
+  #df2$effectiveness[i] = recode(df2$effectiveness[i])
+  df2$sideEffects[i] = recode(df2$sideEffects[i])
+}
+
+#side_effects_perc <- 
+# df %>%
+#   ggplot(aes(effectiveness, fill = factor(sideEffects))) +
+#   geom_bar(position = "fill") + 
+#   theme(legend.position = "top",
+#         legend.direction = "horizontal",
+#         panel.background = element_blank(),
+#         plot.background = element_blank(),
+#         legend.background = element_blank()) +
+#   guides(fill = guide_legend(title = "Satisfaction", reverse = TRUE, nrow = 1)) +
+#   ylab("Proportion") +
+#   xlab("Effectiveness") + 
+#   coord_flip() +
+#   ggtitle("Perceived Drug Effectiveness and Side Effects") +
+#   scale_fill_viridis_d()
+
+#ggsave(side_effects_perc, filename = "side_effects_perc.png")
 ```
-
-Multinomial logit model 1 and 2 not very different based on AIC (1380.239 vs 1383.26 respectively), whereas model 3 has lowest deviance but considerably higher AIC (1879.28). Could go with m1, since it has lowest AIC.
-
