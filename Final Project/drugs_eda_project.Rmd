@@ -183,18 +183,9 @@ df <- df %>%
 ```
 
 
-The data we chose to use is the Drug Review Dataset from the UCI Machine Learning
-Repository. The data focuses on pharmaceutical drug users ratings and written reviews of
-certain drugs they've taken. 
-
-The data was initially compiled by gathering the user reviews from druglib.com, which is "a
-comprehensive drug database organized by relevance to specific drugs." (TODO make footnote for http://www.druglib.com/). It allows people who have used a specific drug to rate 
-the drug based on their experience, just like a user can review a product from Amazon.
-
-Since we are primarily concerned with people diagnosed with depression, we filtered
-out every user that did not state they had depressions in the self-reported condition. That cut out about
-88% of the data, and left us with 499 observations. We then removed the user typed
-reviews, so were only left with the following columns:
+For the current research, we utilized a publicly available data set obtained from the UCI Machine Learning Repository, which contains patient reviews for specific drugs being taken to treat various conditions (Gräßer, Kallumadi, Malberg, & Zaunseder, 2018). The authors of the data set obtained the patient drug review data by pooling across multiple online pharmaceutical review sites. Each patient review for a specific drug consisted of the following:
+The drug name (brand), overall satisfaction rating, perceived effectiveness rating, side effects rating, the condition being treated, benefits comment, side effects review, and overall comments.
+Overall Satisfaction was rated on a scale of 1 to 10, with 10 representing highest possible satisfaction. Perceived Effectiveness and Side Effects ratings were given on a 5-step Likert response scale (Table 1). The remaining review aspects (benefits comment, side effects comment, overall comments) were written responses and excluded from our analyses.
 
 ***
 
@@ -226,8 +217,26 @@ Here is a snapshot of our data
 head(df %>% select(1:5)) %>% kable() %>% kable_styling()
 ```
 
+The raw dataset included patient reviews on drugs taken for various non-psychiatric (depression-related) medical conditions/needs (e.g. common cold, acid reflux, high cholesterol, contraceptives, etc.). We filtered all cases where depression was at least one of the conditions listed by the patient as a reason for drug treatment. To simplify our analyses and to maximize sample size, we chose not to further subdivide filtered cases by presence or absence of comorbid conditions; cases with condition listed as “depression & anxiety” were not differentiated from those listing only “depression”. This filtering resulted in a total of 499 cases. Next, we converted the perceived effectiveness and side effects ratings responses to be numerically represented on an ordinal scale ranging from 1 to 5, representing the lowest to best possible ratings respectively (Table 1). We also defined an additional categorical variable, “Drug Type”, which was not included in the original data. This variable provides a higher order grouping of specific drug brands in terms of the primary mechanisms of action by which they achieve their pharmacological effects. For example, drugs such as Prozac and Citalopram belong to a family of drugs known as selective serotonin reuptake inhibitors (SSRIs). 
 
-We also simplified drug names when necessary. We simplified "wellbutrin-XL" to just "wellbutrin" because it's the same drug, just higher dosage. The drug type falls into three categories: SRI, NRI, and other. The first two target different chemical receptors in the brain to treat depression. The other category contains seven other drug families, but we condensed them all because their individual counts are so low. These were added independently and were not found in the original data. We also recoded the Likert ratings to be numerical instead of strings for making data manipulation simpler.
+
+## Choice of Drug Brands and Type
+
+Based on our filtering criteria, we identified 46 distinct drug brands across multiple drug types. One question we aimed to address was how different drug types were distributed across the patient sample, as indexed by the relative number of reviews associated with specific drugs. 
+
+SSRIs and SNRIs accounted for a vast majority of the reviews in the data (Figure 1). Out of the 499 patient reviews, 193 (39%) were for drugs classified as SNRIs, and 237 (47%) for drugs falling under the SSRI category. The “Other” category encompassed drugs spanning several unique types including, but not limited to, monoamine oxidase inhibitors (MOAIs), amphetamines, benzodiazepines, atypical antipsychotics, and tricyclic antidepressants. Although each of the aforementioned drug types are like SSRIs and SNRIs, insofar as they each represent distinct biochemical mechanisms of action, we chose to group all other drugs into a single category due to the relatively small number of reviews available for drugs not accounted for by the two dominant categories. That SSRIs are the most popular choice of antidepressant drug is consistent with existing literature. 
+
+```{r cut BAR.C drug type}
+df %>%
+  group_by(type) %>%
+  count() %>%
+  ggplot(aes(as.factor(type),n)) +
+  geom_bar(stat = "identity") +
+  #theme_light(base_size = 20) +
+  theme(panel.grid.major.x = element_blank()) +
+  ylab("Count") +
+  xlab("Drug Classification")
+```
 
 *** 
 
@@ -266,18 +275,6 @@ temp %>%
 ```
 
 Here we see counts for each drug in their respective drug family type. We didn't include the other column because it has a large amount of different drugs that make up such a small proprotion of the overall data. The SRI group has a few more drugs than NRI, NRI has two drugs that are more frequent than the most frequent SRI drug. 
-
-```{r cut BAR.C drug type}
-# df %>%
-#   group_by(type) %>%
-#   count() %>%
-#   ggplot(aes(as.factor(type),n)) + 
-#   geom_bar(stat = "identity") +
-#   #theme_light(base_size = 20) +
-#   theme(panel.grid.major.x = element_blank()) +
-#   ylab("Count") +
-#   xlab("Drug Classification") 
-```
 
 ### Satisfaction Measured Against Side Effects and Effectiveness
 
@@ -454,9 +451,9 @@ df %>%
   scale_fill_viridis_c()
 ```
 
-
 This heatmap shows how side effects and effectiveness are related to how satisfied the user is with their medication. There appears to be a trend that as effectiveness  increases and side effects get less severe that satisfaction increases, however it is far from perffect. When effectiveness is four and side effects is three, the heatmap value is extremely low.  
 
+***
 
 ## Model Creation 
 
@@ -517,6 +514,9 @@ drugs.polr.long %>%
 
 #ggsave(ordinal.plot, filename="ordinal_plot.png")
 ```
+
+This plot shows the probabilites from the ordinal model. We can see that the model generally predicts high satisfaction as effectiveness and side effects increase. 
+
 
 Multinomial Logit Model #1 (2 predictors): SatisfactionRating ~ Effectiveness + SideEffects
 ```{r}
@@ -634,6 +634,21 @@ polr.se.long %>%
 
 # Identification of work left to do/limitations.
 
+# References
+
+Anderson, I. M., Ferrier, I. N., Baldwin, R. C., Cowen, P. J., Howard, L., Lewis, G., & Tylee, A. 	(2008). Evidence-based guidelines for treating depressive disorders with antidepressants: 	a revision of the 2000 British Association for Psychopharmacology guidelines. Journal of 	Psychopharmacology, 22(4), 343-396.
+
+Fortney, J. C., Pyne, J. M., Edlund, M. J., Stecker, T., Mittal, D., Robinson, D. E., & Henderson, 	K. L. (2011). Reasons for antidepressant nonadherence among veterans treated in primary 	care clinics. The Journal of Clinical Psychiatry, 72(6), 827-834.
+
+McDonald, H. P., Garg, A. X., & Haynes, R. B. (2002). Interventions to enhance patient 		adherence to medication prescriptions: scientific review. JAMA, 288(22), 2868-2879.
+
+Qaseem, A., Barry, M. J., & Kansagara, D. (2016). Nonpharmacologic versus pharmacologic 	treatment of adult patients with major depressive disorder: a clinical practice guideline 	from the American College of Physicians. Annals of Internal Medicine, 164(5), 350-359.
+
+Sansone, R. A., & Sansone, L. A. (2012). Antidepressant adherence: are patients taking their 	medications?. Innovations in Clinical Neuroscience, 9(5-6), 41-6.
+
+Won, E., Park, S. C., Han, K. M., Sung, S. H., Lee, H. Y., Paik, J. W., & Lee, K. J. (2014). 	Evidence-based, pharmacological treatment guideline for depression in Korea. Journal of 	Korean Medical Science, 29(4), 468-484.
+
+
 
 ```{r unused code}
 #Multinomial Logit Model #2 (3 Predictors): SatisfactionRating ~ Effectiveness + SideEffects + DrugType
@@ -732,21 +747,21 @@ polr.se.long %>%
 
 # For the report, use the one below
 
-recode = function(x) {
-  if(x < 3) {
-    return("Poor")
-  } else if(x == 3 | x == 4) {
-    return("Fair")
-  } else {
-    return("Excellent")
-  }
-}
-
-df2 <- df
-for(i in 1:nrow(df2)) {
-  #df2$effectiveness[i] = recode(df2$effectiveness[i])
-  df2$sideEffects[i] = recode(df2$sideEffects[i])
-}
+# recode = function(x) {
+#   if(x < 3) {
+#     return("Poor")
+#   } else if(x == 3 | x == 4) {
+#     return("Fair")
+#   } else {
+#     return("Excellent")
+#   }
+# }
+# 
+# df2 <- df
+# for(i in 1:nrow(df2)) {
+#   #df2$effectiveness[i] = recode(df2$effectiveness[i])
+#   df2$sideEffects[i] = recode(df2$sideEffects[i])
+# }
 
 #side_effects_perc <- 
 # df %>%
