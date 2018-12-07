@@ -554,10 +554,9 @@ multi_mod.long %>%
 # ggsave(multi.plot, filename="multiplot.png")
 ```
 
-Multinomial logit model 1 and 2 not very different based on AIC (1380.239 vs 1383.26 respectively), whereas model 3 has lowest deviance but considerably higher AIC (1879.28). Could go with multi_mod, since it has lowest AIC.
 
-Show polr plot predicting effectiveness using side effects as predictor; how strongly do side effects predict perceived drug effectiveness?
 ```{r}
+#Show polr plot predicting effectiveness using side effects as predictor; how strongly do side #effects predict perceived drug effectiveness?
 polr4.df <- data.frame(model.frame(drugs_polr4), fitted.values(drugs_polr4))
 polr4.long <- polr4.df %>% gather(factor.effectiveness., probability, X1:X5) %>% 
   mutate(factor.effectiveness. = substring(factor.effectiveness., 2))
@@ -587,8 +586,9 @@ polr4.long %>%
         axis.text = element_text(size = 12)) 
 ```
 
-Show polr plot with only single predictor using Side Effects to predict Overall Satisfaction
+
 ```{r}
+# Show polr plot with only single predictor using Side Effects to predict Overall Satisfaction
 polr.se.df <- data.frame(model.frame(drugs_polr_se), fitted.values(drugs_polr_se))
 polr.se.long <- polr.se.df %>% gather(factor.rating., probability, X1:X10) %>%
   mutate(factor.rating. = substring(factor.rating., 2))
