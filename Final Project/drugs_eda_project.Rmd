@@ -1,6 +1,6 @@
 ---
 title: "Examining Patient Evaluations of Antidepressant Drug Use and Efficacy"
-author: "Joe Stoica, Conor Devins, Geno Kim"
+author: "Joe Stoica, Conor Devins, Eugene Kim"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
   html_document:
@@ -269,7 +269,7 @@ temp %>%
   theme_fivethirtyeight()
 ```
 
-Here we see counts for each drug in their respective drug family type. We didn't include the other column because it has a large amount of different drugs that make up such a small proprotion of the overall data. The SRI group has a few more drugs than NRI, NRI has two drugs that are more frequent than the most frequent SRI drug. 
+Here we see counts for each drug in their respective drug family type. We didn't include the Other drug category because it has a large amount of different drugs that comprise a relatively small proprotion of the overall data. The SSRI group has a few more drugs than SNRI, SNRI has two drugs that are more frequent than the most frequent SSRI. 
 
 ### Satisfaction Measured Against Side Effects and Effectiveness
 
@@ -296,7 +296,7 @@ df %>%
 # ggsave(side_satis_plot, filename = "side_satis_plot.png", height = 9, width = 16)
 ```
 
-The plot revelas that the worse the side effects are, the least satisfied the subjects were. This generally makes a lot of sense because people who are already feeling bad and are taking medications to mitigate their ailments most likely don't like feeling additionally worse. It's interesting to see how over half of the users reporting no side efects rate the drug 10/10, while almost 80% of users with extremely severe side effects have a satisfaction level of 1.
+The plot reveals that the worse the side effects are, the least satisfied the subjects were. This generally makes a lot of sense because people who are already feeling bad and are taking medications to mitigate their ailments most likely don't like feeling additionally worse. It's interesting to see how over half of the users reporting no side efects rate the drug 10/10, while almost 80% of users with extremely severe side effects have a satisfaction level of 1.
 
 ```{r STACK BAR EFF SATIS}
 df %>%
@@ -320,7 +320,7 @@ df %>%
 #ggsave(satis_perc, filename = "satis_perc.png", height = 9, width = 16)
 ```
 
-The above plot shows that the more effective the drug was, the more satisfied the users were. The response proportions are not as extreme as side effects although. It is worth mentioning that it is a possibility that users have a tendency to select the most extreme values, and it calls into account how accurate a Likert variable can truly be due to its subjective nature. 
+The above plot shows that the more effective the drug was, the more satisfied the users were. The response proportions are not as extreme as side effects however. It is worth mentioning the possibility that users have a tendency to select the most extreme values, and it calls into account how accurate a Likert variable can truly be due to its subjective nature. 
 
 ```{r make mosiac df}
 # Set up data frame for mosaic plots
@@ -396,7 +396,7 @@ x %>%
 ```
 
 
-In the same vein, the three drug types perform fairly, with some slight variations that are difficult to distinguish whether the differences can be attributed to randomness or not.s
+In the same vain, the three drug types perform fairly, with some slight variations that are difficult to distinguish whether the differences can be attributed to randomness or not.s
 
 ```{r cut 3WAY SCATTER}
 # df %>% 
@@ -510,7 +510,7 @@ drugs.polr.long %>%
 #ggsave(ordinal.plot, filename="ordinal_plot.png")
 ```
 
-This plot shows the probabilites from the ordinal model. We can see that the model generally predicts high satisfaction as effectiveness and side effects increase. 
+This plot shows the probabilites from the ordinal model. We can see that the model generally predicts high satisfaction with improved effectiveness and side effects ratings. 
 
 
 Multinomial Logit Model #1 (2 predictors): SatisfactionRating ~ Effectiveness + SideEffects
